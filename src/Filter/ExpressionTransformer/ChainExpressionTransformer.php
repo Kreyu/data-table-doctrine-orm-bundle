@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
 
-use Doctrine\ORM\Query\Expr\Comparison;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 
 class ChainExpressionTransformer implements ExpressionTransformerInterface
@@ -22,7 +21,7 @@ class ChainExpressionTransformer implements ExpressionTransformerInterface
         }
     }
 
-    public function transform(mixed $expression): Comparison
+    public function transform(mixed $expression): mixed
     {
         foreach ($this->expressionTransformers as $transformer) {
             $expression = $transformer->transform($expression);

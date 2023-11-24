@@ -7,9 +7,10 @@ Expression transformers provide a way to extend Doctrine DQL expressions before 
 - `TrimExpressionTransformer` - wraps the expression in the `TRIM()` function
 - `LowerExpressionTransformer` - wraps the expression in the `LOWER()` function
 - `UpperExpressionTransformer` - wraps the expression in the `UPPER()` function
+- `CallbackExpressionTransformer` - allows transforming the expression using the callback function
 - `ChainExpressionTransformer` - allows applying multiple expression transformers
 
-**Note**: for easier usage, built-in transformers can be enabled using the `trim`, `lower` and `upper` filter options.
+**Note**: for easier usage, part of the built-in transformers can be enabled using the `trim`, `lower` and `upper` filter options.
 
 ## Creating Custom Expression Transformer
 
