@@ -33,6 +33,11 @@ class UnaccentExpressionTransformer implements ExpressionTransformerInterface
 
         $leftExpr = sprintf('UNACCENT(%s)', (string) $expression->getLeftExpr());
         $rightExpr = sprintf('UNACCENT(%s)', (string) $expression->getRightExpr());
+        
+        // or use expression API:
+        //
+        // $leftExpr = new Expr\Func('UNACCENT', $expression->getLeftExpr());
+        // $rightExpr = new Expr\Func('UNACCENT', $expression->getRightExpr());
 
         return new Comparison($leftExpr, $expression->getOperator(), $rightExpr);
     }
@@ -54,14 +59,20 @@ class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransfor
 {
     protected function transformLeftExpr(mixed $leftExpr, Expr $expr): mixed
     {
-        // or: new Expr\Func('UNACCENT', $leftExpr);
         return sprintf('UNACCENT(%s)', (string) $leftExpr);
+        
+        // or use expression API: 
+        // 
+        // return new Expr\Func('UNACCENT', $leftExpr);
     }
 
     protected function transformRightExpr(mixed $rightExpr, Expr $expr): mixed
     {
-        // or: new Expr\Func('UNACCENT', $rightExpr);
         return sprintf('UNACCENT(%s)', (string) $rightExpr);
+        
+        // or use expression API: 
+        //
+        // return new Expr\Func('UNACCENT', $rightExpr);
     }
 }
 ```
