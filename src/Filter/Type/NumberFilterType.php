@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrm\Filter\Type;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;

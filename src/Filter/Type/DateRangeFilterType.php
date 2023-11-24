@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrmBundle\Filter\Type;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Kreyu\Bundle\DataTableBundle\Bridge\Doctrine\Orm\Query\DoctrineOrmProxyQuery;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;

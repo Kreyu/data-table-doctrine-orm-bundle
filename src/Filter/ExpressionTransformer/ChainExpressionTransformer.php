@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
 
 use Doctrine\ORM\Query\Expr\Comparison;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;

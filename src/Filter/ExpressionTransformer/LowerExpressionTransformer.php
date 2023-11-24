@@ -2,36 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
 
-use Doctrine\ORM\Query\Expr\Comparison;
-use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
+use Doctrine\ORM\Query\Expr;
 
-class LowerExpressionTransformer implements ExpressionTransformerInterface
+class LowerExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    public function __construct(
-        private readonly bool $lowerLeft = true,
-        private readonly bool $lowerRight = true
-    ) {
+    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): Expr\Func
+    {
+        return $expr->lower($leftExpr);
     }
 
-    public function transform(mixed $expression): Comparison
+    protected function transformRightExpr(mixed $rightExpr, Expr $expr): Expr\Func
     {
-        if (!$expression instanceof Comparison) {
-            throw new UnexpectedTypeException($expression, Comparison::class);
-        }
-
-        $leftExpr = $expression->getLeftExpr();
-        $rightExpr = $expression->getRightExpr();
-
-        if ($this->lowerLeft) {
-            $leftExpr = "LOWER($leftExpr)";
-        }
-
-        if ($this->lowerRight) {
-            $rightExpr = "LOWER($rightExpr)";
-        }
-
-        return new Comparison($leftExpr, $expression->getOperator(), $rightExpr);
+        return $expr->lower($rightExpr);
     }
 }

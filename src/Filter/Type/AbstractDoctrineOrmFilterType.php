@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrm\Filter\Type;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\ExpressionTransformerInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
 use Kreyu\Bundle\DataTableBundle\Bridge\Doctrine\Orm\Query\DoctrineOrmProxyQuery;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
@@ -15,6 +19,12 @@ use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 
 abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
 {
+    protected array $expressionTransformerOptionMap = [
+        'trim' => TrimExpressionTransformer::class,
+        'upper' => UpperExpressionTransformer::class,
+        'lower' => LowerExpressionTransformer::class,
+    ];
+
     public function apply(ProxyQueryInterface $query, FilterData $data, FilterInterface $filter, array $options): void
     {
         if (!$query instanceof DoctrineOrmProxyQuery) {
@@ -31,6 +41,7 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
         $queryPath = $this->getFilterQueryPath($query, $filter);
 
         $parameterName = $this->getUniqueParameterName($query, $filter);
+        $parameterValue = $this->getParameterValue($operator, $value);
 
         try {
             $expression = $this->getOperatorExpression($queryPath, $parameterName, $operator, new Expr());
@@ -38,9 +49,21 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
             return;
         }
 
-        $query
-            ->andWhere($expression)
-            ->setParameter($parameterName, $this->getParameterValue($operator, $value));
+        $expressionTransformers = $this->getExpressionTransformers($options);
+
+        $expression = $this->applyExpressionTransformers($expressionTransformers, $expression);
+
+        $this->applyExpression($query, $expression, $parameterName, $parameterValue);
+    }
+
+    public function getParent(): ?string
+    {
+        return DoctrineOrmFilterType::class;
+    }
+
+    protected function getUniqueParameterName(DoctrineOrmProxyQuery $query, FilterInterface $filter): string
+    {
+        return $filter->getFormName().'_'.$query->getUniqueParameterId();
     }
 
     protected function getFilterOperator(FilterData $data, FilterInterface $filter): Operator
@@ -51,27 +74,6 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
     protected function getFilterValue(FilterData $data): mixed
     {
         return $data->getValue();
-    }
-
-    /**
-     * @throws InvalidArgumentException if operator is not supported by the filter
-     */
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
-    {
-        throw new InvalidArgumentException('Operator not supported');
-    }
-
-    /**
-     * @param DoctrineOrmProxyQuery $query
-     */
-    public function getUniqueParameterName(ProxyQueryInterface $query, FilterInterface $filter): string
-    {
-        return $filter->getFormName().'_'.$query->getUniqueParameterId();
-    }
-
-    protected function getParameterValue(Operator $operator, mixed $value): mixed
-    {
-        return $value;
     }
 
     /**
@@ -90,8 +92,49 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
         return $queryPath;
     }
 
-    public function getParent(): ?string
+    /**
+     * @throws InvalidArgumentException if operator is not supported by the filter
+     */
+    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
     {
-        return DoctrineOrmFilterType::class;
+        throw new InvalidArgumentException('Operator not supported');
+    }
+
+    /**
+     * @return iterable<ExpressionTransformerInterface> $expressionTransformers
+     */
+    protected function getExpressionTransformers(array $options): iterable
+    {
+        foreach ($this->expressionTransformerOptionMap as $option => $expressionTransformerClass) {
+            if ($options[$option]) {
+                yield (new $expressionTransformerClass)();
+            }
+        }
+
+        if ($expressionTransformer = $options['expression_transformer']) {
+            yield $expressionTransformer;
+        }
+    }
+
+    /**
+     * @param iterable<ExpressionTransformerInterface> $expressionTransformers
+     */
+    protected function applyExpressionTransformers(iterable $expressionTransformers, mixed $expression): mixed
+    {
+        foreach ($expressionTransformers as $expressionTransformer) {
+            $expression = $expressionTransformer->transform($expression);
+        }
+
+        return $expression;
+    }
+
+    protected function getParameterValue(Operator $operator, mixed $value): mixed
+    {
+        return $value;
+    }
+
+    protected function applyExpression(DoctrineOrmProxyQuery $query, mixed $expression, string $parameterName, mixed $parameterValue): void
+    {
+        $query->andWhere($expression)->setParameter($parameterName, $parameterValue);
     }
 }

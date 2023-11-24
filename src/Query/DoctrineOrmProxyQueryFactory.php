@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrm\Query;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Query;
 
 use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;

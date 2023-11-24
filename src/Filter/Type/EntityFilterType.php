@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrm\Filter\Type;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\Query\Expr;

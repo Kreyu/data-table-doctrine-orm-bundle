@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bridge\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
 
 interface ExpressionTransformerInterface
 {
