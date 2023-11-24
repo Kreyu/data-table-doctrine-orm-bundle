@@ -52,13 +52,15 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\Abstrac
 
 class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): Expr\Func
+    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): mixed
     {
+        // or: new Expr\Func('UNACCENT', $leftExpr);
         return sprintf('UNACCENT(%s)', (string) $leftExpr);
     }
 
-    protected function transformRightExpr(mixed $rightExpr, Expr $expr): Expr\Func
+    protected function transformRightExpr(mixed $rightExpr, Expr $expr): mixed
     {
+        // or: new Expr\Func('UNACCENT', $rightExpr);
         return sprintf('UNACCENT(%s)', (string) $rightExpr);
     }
 }
