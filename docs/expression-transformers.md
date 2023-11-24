@@ -64,12 +64,13 @@ class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransfor
 }
 ```
 
-Note: the `AbstractComparisonExpressionTransformer` accepts two boolean arguments in the constructor:
+**Note**: the `AbstractComparisonExpressionTransformer` accepts two boolean arguments in the constructor:
 
 - `transformLeftExpr` - defaults to `true`
 - `transformRightExpr` - defaults to `true`
 
-Thanks to that, the user can specify which side of the expression should be transformed.
+Thanks to that, the user can specify which side of the expression should be 
+transformed - the `transformLeftExpr()` and `transformRightExpr()` methods are called only when necessary.
 
 To use the created expression transformer, pass it as the `expression_transformer` filter type option:
 
