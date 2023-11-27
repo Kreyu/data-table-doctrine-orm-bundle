@@ -15,6 +15,7 @@ class TextFilterType extends AbstractDoctrineOrmFilterType
     {
         $resolver
             ->setDefaults([
+                'default_operator' => Operator::Contains,
                 'supported_operators' => [
                     Operator::Equals,
                     Operator::NotEquals,
