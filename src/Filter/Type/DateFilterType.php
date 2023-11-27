@@ -20,6 +20,9 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
         $resolver
             ->setDefaults([
                 'form_type' => DateType::class,
+                'form_options' => [
+                    'widget' => 'single_text',
+                ],
                 'supported_operators' => [
                     Operator::Equals,
                     Operator::NotEquals,
@@ -29,22 +32,15 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
                     Operator::LessThanEquals,
                 ],
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
+                'empty_data' => function (Options $options) {
+                    // Note: because choice and text widgets are split into three fields,
+                    //       we have to return an array with three empty values to properly set the empty data.
+                    return match ($options['form_options']['widget'] ?? null) {
+                        'choice', 'text' => ['day' => '', 'month' => '', 'year' => ''],
+                        default => '',
+                    };
+                },
             ])
-            ->addNormalizer('form_options', function (Options $options, array $value): array {
-                return $value + ['widget' => 'single_text'];
-            })
-            ->addNormalizer('empty_data', function (Options $options, string|array $value): string|array {
-                if (DateType::class !== $options['form_type']) {
-                    return $value;
-                }
-
-                // Note: because choice and text widgets are split into three fields,
-                //       we have to return an array with three empty values to properly set the empty data.
-                return match ($options['form_options']['widget'] ?? null) {
-                    'choice', 'text' => ['day' => '', 'month' => '', 'year' => ''],
-                    default => '',
-                };
-            })
         ;
     }
 

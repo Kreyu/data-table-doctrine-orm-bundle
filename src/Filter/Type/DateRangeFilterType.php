@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
-use Kreyu\Bundle\DataTableBundle\Bridge\Doctrine\Orm\Query\DoctrineOrmProxyQuery;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Form\Type\DateRangeType;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -17,7 +17,7 @@ use function Symfony\Component\Translation\t;
 class DateRangeFilterType extends AbstractDoctrineOrmFilterType
 {
     /**
-     * @param DoctrineOrmProxyQuery $query
+     * @param DoctrineOrmProxyQueryInterface $query
      */
     public function apply(ProxyQueryInterface $query, FilterData $data, FilterInterface $filter, array $options): void
     {
@@ -25,9 +25,13 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType
 
         $parameterName = $this->getUniqueParameterName($query, $filter);
 
-        $queryPath = $this->getFilterQueryPath($query, $filter);
+        $queryBuilder = $query->getQueryBuilder();
 
-        $criteria = $query->expr()->andX();
+        $queryPath = $this->getFilterQueryPath($queryBuilder, $filter);
+
+        $expr = $queryBuilder->expr();
+
+        $criteria = $expr->andX();
 
         if (!is_array($value)) {
             return;
@@ -39,9 +43,9 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType
             $dateFrom = \DateTime::createFromInterface($dateFrom);
             $dateFrom->setTime(0, 0);
 
-            $criteria->add($query->expr()->gte($queryPath, ":$parameterNameFrom"));
+            $criteria->add($expr->gte($queryPath, ":$parameterNameFrom"));
 
-            $query->setParameter($parameterNameFrom, $dateFrom);
+            $queryBuilder->setParameter($parameterNameFrom, $dateFrom);
         }
 
         if (null !== $valueTo = $value['to'] ?? null) {
@@ -50,13 +54,13 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType
             $valueTo = \DateTime::createFromInterface($valueTo)->modify('+1 day');
             $valueTo->setTime(0, 0);
 
-            $criteria->add($query->expr()->lt($queryPath, ":$parameterNameTo"));
+            $criteria->add($expr->lt($queryPath, ":$parameterNameTo"));
 
-            $query->setParameter($parameterNameTo, $valueTo);
+            $queryBuilder->setParameter($parameterNameTo, $valueTo);
         }
 
         if ($criteria->count() > 0) {
-            $query->andWhere($criteria);
+            $queryBuilder->andWhere($criteria);
         }
     }
 

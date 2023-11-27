@@ -12,15 +12,15 @@ use Kreyu\Bundle\DataTableBundle\Pagination\CurrentPageOutOfRangeException;
 use Kreyu\Bundle\DataTableBundle\Pagination\Pagination;
 use Kreyu\Bundle\DataTableBundle\Pagination\PaginationData;
 use Kreyu\Bundle\DataTableBundle\Pagination\PaginationInterface;
-use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 use Kreyu\Bundle\DataTableBundle\Sorting\SortingData;
 
 /**
  * @mixin QueryBuilder
  */
-class DoctrineOrmProxyQuery implements ProxyQueryInterface
+class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 {
     private int $uniqueParameterId = 0;
+    private int $batchSize = 5000;
     private bool $entityManagerClearingEnabled = true;
 
     /**
@@ -64,13 +64,13 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
         $this->queryBuilder->resetDQLPart('orderBy');
 
         foreach ($sortingData->getColumns() as $column) {
-            $field = $column->getName();
+            $propertyPath = (string) $column->getPropertyPath();
 
-            if ($rootAlias && !str_contains($field, '.') && !str_starts_with($field, '__')) {
-                $field = $rootAlias.'.'.$field;
+            if ($rootAlias && !str_contains($propertyPath, '.') && !str_contains($propertyPath, '(') && !str_starts_with($propertyPath, '__')) {
+                $propertyPath = $rootAlias.'.'.$propertyPath;
             }
 
-            $this->queryBuilder->addOrderBy($field, $column->getDirection());
+            $this->queryBuilder->addOrderBy($propertyPath, $column->getDirection());
         }
     }
 
@@ -87,14 +87,16 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
      */
     public function getPagination(): PaginationInterface
     {
-        $paginator = $this->createPaginator();
+        $maxResults = $this->queryBuilder->getMaxResults();
+
+        $paginator = $this->createPaginator(forceDisabledFetchJoinCollection: null === $maxResults);
 
         try {
             return new Pagination(
                 items: $paginator->getIterator(),
                 currentPageNumber: $this->getCurrentPageNumber(),
                 totalItemCount: $paginator->count(),
-                itemNumberPerPage: $this->queryBuilder->getMaxResults(),
+                itemNumberPerPage: $maxResults,
             );
         } catch (CurrentPageOutOfRangeException) {
             $this->queryBuilder->setFirstResult(null);
@@ -103,19 +105,35 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
         return $this->getPagination();
     }
 
-    public function getItems(int $batchSize = 1000): iterable
+    public function getItems(): iterable
     {
-        $query = (clone $this->queryBuilder)->getQuery();
+        $paginator = $this->createPaginator(forceDisabledFetchJoinCollection: true);
 
-        $this->applyQueryHints($query);
+        $batchSize = $this->batchSize;
 
-        foreach ($query->toIterable(hydrationMode: $this->hydrationMode) as $index => $item) {
-            yield $item;
+        $cursorPosition = 0;
 
-            if (0 === $index % $batchSize && $this->isEntityManagerClearingEnabled()) {
-                $this->getEntityManager()->clear();
+        do {
+            $hasItems = true;
+
+            if (0 === $cursorPosition % $batchSize) {
+                $hasItems = false;
+
+                $paginator->getQuery()->setMaxResults($batchSize);
+                $paginator->getQuery()->setFirstResult($cursorPosition);
+
+                foreach ($paginator->getIterator() as $item) {
+                    $hasItems = true;
+                    yield $item;
+                }
+
+                if ($this->entityManagerClearingEnabled) {
+                    $this->getEntityManager()->clear();
+                }
             }
-        }
+
+            ++$cursorPosition;
+        } while ($hasItems);
     }
 
     public function getUniqueParameterId(): int
@@ -128,9 +146,6 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
         $this->hints[$name] = $value;
     }
 
-    /**
-     * @psalm-param string|AbstractQuery::HYDRATE_* $hydrationMode
-     */
     public function setHydrationMode(int|string $hydrationMode): void
     {
         $this->hydrationMode = $hydrationMode;
@@ -146,6 +161,16 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
         $this->entityManagerClearingEnabled = $entityManagerClearingEnabled;
     }
 
+    public function getBatchSize(): int
+    {
+        return $this->batchSize;
+    }
+
+    public function setBatchSize(int $batchSize): void
+    {
+        $this->batchSize = $batchSize;
+    }
+
     private function getCurrentPageNumber(): int
     {
         $firstResult = $this->queryBuilder->getFirstResult();
@@ -154,7 +179,7 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
         return (int) ($firstResult / $maxResults) + 1;
     }
 
-    private function createPaginator(): Paginator
+    private function createPaginator(bool $forceDisabledFetchJoinCollection = false): Paginator
     {
         $rootEntity = current($this->queryBuilder->getRootEntities());
 
@@ -176,7 +201,13 @@ class DoctrineOrmProxyQuery implements ProxyQueryInterface
 
         $query->setHydrationMode($this->hydrationMode);
 
-        return new Paginator($query, $hasSingleIdentifierName && $hasJoins);
+        $fetchJoinCollection = $hasSingleIdentifierName && $hasJoins;
+
+        if ($forceDisabledFetchJoinCollection) {
+            $fetchJoinCollection = false;
+        }
+
+        return new Paginator($query, $fetchJoinCollection);
     }
 
     private function applyQueryHints(Query $query): void

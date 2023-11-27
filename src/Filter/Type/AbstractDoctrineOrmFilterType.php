@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\ExpressionTransformerInterface;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
-use Kreyu\Bundle\DataTableBundle\Bridge\Doctrine\Orm\Query\DoctrineOrmProxyQuery;
+use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Kreyu\Bundle\DataTableBundle\Filter\Type\AbstractFilterType;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\ExpressionTransformerInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 
 abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
 {
@@ -27,9 +28,11 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
 
     public function apply(ProxyQueryInterface $query, FilterData $data, FilterInterface $filter, array $options): void
     {
-        if (!$query instanceof DoctrineOrmProxyQuery) {
-            throw new InvalidArgumentException(sprintf('Query must be an instance of "%s"', DoctrineOrmProxyQuery::class));
+        if (!$query instanceof DoctrineOrmProxyQueryInterface) {
+            throw new InvalidArgumentException(sprintf('Query must be an instance of "%s"', DoctrineOrmProxyQueryInterface::class));
         }
+
+        $queryBuilder = $query->getQueryBuilder();
 
         $operator = $this->getFilterOperator($data, $filter);
         $value = $this->getFilterValue($data);
@@ -38,7 +41,7 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
             return;
         }
 
-        $queryPath = $this->getFilterQueryPath($query, $filter);
+        $queryPath = $this->getFilterQueryPath($queryBuilder, $filter);
 
         $parameterName = $this->getUniqueParameterName($query, $filter);
         $parameterValue = $this->getParameterValue($operator, $value);
@@ -53,7 +56,7 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
 
         $expression = $this->applyExpressionTransformers($expressionTransformers, $expression);
 
-        $this->applyExpression($query, $expression, $parameterName, $parameterValue);
+        $this->applyExpression($queryBuilder, $expression, $parameterName, $parameterValue);
     }
 
     public function getParent(): ?string
@@ -61,7 +64,7 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
         return DoctrineOrmFilterType::class;
     }
 
-    protected function getUniqueParameterName(DoctrineOrmProxyQuery $query, FilterInterface $filter): string
+    protected function getUniqueParameterName(DoctrineOrmProxyQueryInterface $query, FilterInterface $filter): string
     {
         return $filter->getFormName().'_'.$query->getUniqueParameterId();
     }
@@ -76,12 +79,9 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
         return $data->getValue();
     }
 
-    /**
-     * @param DoctrineOrmProxyQuery $query
-     */
-    protected function getFilterQueryPath(ProxyQueryInterface $query, FilterInterface $filter): string
+    protected function getFilterQueryPath(QueryBuilder $queryBuilder, FilterInterface $filter): string
     {
-        $rootAlias = current($query->getRootAliases());
+        $rootAlias = current($queryBuilder->getRootAliases());
 
         $queryPath = $filter->getQueryPath();
 
@@ -107,7 +107,7 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
     {
         foreach ($this->expressionTransformerOptionMap as $option => $expressionTransformerClass) {
             if ($options[$option]) {
-                yield (new $expressionTransformerClass)();
+                yield (new $expressionTransformerClass())();
             }
         }
 
@@ -133,8 +133,8 @@ abstract class AbstractDoctrineOrmFilterType extends AbstractFilterType
         return $value;
     }
 
-    protected function applyExpression(DoctrineOrmProxyQuery $query, mixed $expression, string $parameterName, mixed $parameterValue): void
+    protected function applyExpression(QueryBuilder $queryBuilder, mixed $expression, string $parameterName, mixed $parameterValue): void
     {
-        $query->andWhere($expression)->setParameter($parameterName, $parameterValue);
+        $queryBuilder->andWhere($expression)->setParameter($parameterName, $parameterValue);
     }
 }

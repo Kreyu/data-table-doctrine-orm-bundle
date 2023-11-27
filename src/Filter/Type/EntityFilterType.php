@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
-use Doctrine\Bundle\DoctrineBundle\Registry;
 use Doctrine\ORM\Query\Expr;
+use Doctrine\Persistence\ManagerRegistry;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
@@ -18,7 +18,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 class EntityFilterType extends AbstractDoctrineOrmFilterType
 {
     public function __construct(
-        private readonly Registry $doctrineRegistry,
+        private readonly ManagerRegistry $managerRegistry,
     ) {
     }
 
@@ -42,7 +42,7 @@ class EntityFilterType extends AbstractDoctrineOrmFilterType
                     return $value;
                 }
 
-                $identifiers = $this->doctrineRegistry
+                $identifiers = $this->managerRegistry
                     ->getManagerForClass($value['class'])
                     ?->getClassMetadata($value['class'])
                     ->getIdentifier() ?? [];

@@ -30,12 +30,13 @@ class ChainExpressionTransformerTest extends ExpressionTransformerTestCase
 
 class TestExpressionTransformer implements ExpressionTransformerInterface
 {
-    public function __construct(private readonly string $value)
-    {
+    public function __construct(
+        private readonly string $value,
+    ) {
     }
 
     public function transform(mixed $expression): string
     {
-        return $expression . ' ' . $this->value;
+        return $expression.' '.$this->value;
     }
 }

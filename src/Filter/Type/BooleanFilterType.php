@@ -8,11 +8,8 @@ use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
-use Stringable;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-
 use Symfony\Component\Translation\TranslatableMessage;
 
 class BooleanFilterType extends AbstractDoctrineOrmFilterType
@@ -22,20 +19,20 @@ class BooleanFilterType extends AbstractDoctrineOrmFilterType
         $resolver
             ->setDefaults([
                 'form_type' => ChoiceType::class,
-                'active_filter_formatter' => $this->formatActiveValue(...),
-            ])
-            ->addNormalizer('form_options', function (Options $options, mixed $value) {
-                if (ChoiceType::class !== $options['form_type']) {
-                    return $value;
-                }
-
-                return $value + [
+                'form_options' => [
                     'choices' => ['yes' => true, 'no' => false],
                     'choice_label' => function (bool $choice, string $key) {
-                        return t(ucfirst($key), domain: 'KreyuDataTable');
+                        return $this->getTranslatableMessage(ucfirst($key));
                     },
-                ];
-            })
+                ],
+                'supported_operators' => [
+                    Operator::Equals,
+                    Operator::NotEquals,
+                ],
+                'active_filter_formatter' => function (FilterData $data) {
+                    return $this->getTranslatableMessage($data->getValue() ? 'Yes' : 'No');
+                },
+            ])
         ;
     }
 
@@ -50,12 +47,10 @@ class BooleanFilterType extends AbstractDoctrineOrmFilterType
         return $expression($queryPath, ":$parameterName");
     }
 
-    private function formatActiveValue(FilterData $data): Stringable
+    private function getTranslatableMessage(string $value): string|TranslatableMessage
     {
-        $value = $data->getValue() ? 'Yes' : 'No';
-
         if (class_exists(TranslatableMessage::class)) {
-            $value = new TranslatableMessage($value, domain: 'KreyuDataTable');
+            return new TranslatableMessage($value, domain: 'KreyuDataTable');
         }
 
         return $value;
