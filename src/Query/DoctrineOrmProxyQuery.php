@@ -8,6 +8,7 @@ use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Pagination\CurrentPageOutOfRangeException;
 use Kreyu\Bundle\DataTableBundle\Pagination\Pagination;
 use Kreyu\Bundle\DataTableBundle\Pagination\PaginationData;
@@ -41,6 +42,11 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     public function __get(string $name): mixed
     {
         return $this->queryBuilder->{$name};
+    }
+
+    public function __set(string $name, $value): void
+    {
+        throw new InvalidArgumentException('Not supported');
     }
 
     public function __clone(): void
