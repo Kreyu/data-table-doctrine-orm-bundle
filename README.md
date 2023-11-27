@@ -1,6 +1,9 @@
 # DataTableDoctrineOrmBundle
 
-Provides Doctrine ORM integration for the DataTableBundle.
+Provides [Doctrine ORM](https://github.com/doctrine/orm) integration for the [DataTableBundle](https://github.com/kreyu/data-table-bundle).
+
+> [!WARNING]  
+> This bundle is still during development. Backwards compatibility is not guaranteed.
 
 ## Installation
 
