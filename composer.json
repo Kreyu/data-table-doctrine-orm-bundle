@@ -24,7 +24,11 @@
   },
   "autoload": {
     "psr-4": {
-      "Kreyu\\Bundle\\DataTableDoctrineOrmBundle\\": "src",
+      "Kreyu\\Bundle\\DataTableDoctrineOrmBundle\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
       "Kreyu\\Bundle\\DataTableDoctrineOrmBundle\\Tests\\": "tests"
     }
   }

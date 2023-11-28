@@ -7,6 +7,8 @@ Provides [Doctrine ORM](https://github.com/doctrine/orm) integration for the [Da
 
 ## Installation
 
+Use [Composer](https://getcomposer.org/) to install the bundle:
+
 ```shell
 composer require kreyu/data-table-doctrine-orm-bundle
 ```
