@@ -9,10 +9,14 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\DoctrineOrmFilterType;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\EntityFilterType;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\NumberFilterType;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\TextFilterType;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryFactory;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $configurator) {
     $configurator->services()
+        ->set('kreyu_data_table_doctrine_orm.proxy_query.factory', DoctrineOrmProxyQueryFactory::class)
+            ->tag('kreyu_data_table.proxy_query.factory')
+
         ->set('kreyu_data_table_doctrine_orm.filter.type.doctrine_orm', DoctrineOrmFilterType::class)
             ->tag('kreyu_data_table.filter.type')
 

@@ -16,16 +16,22 @@ interface DoctrineOrmProxyQueryInterface extends ProxyQueryInterface
 
     public function getUniqueParameterId(): int;
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getHints(): array;
+
     public function setHint(string $name, mixed $value): void;
+
+    /**
+     * @psalm-return string|AbstractQuery::HYDRATE_*
+     */
+    public function getHydrationMode(): string;
 
     /**
      * @psalm-param string|AbstractQuery::HYDRATE_* $hydrationMode
      */
     public function setHydrationMode(int|string $hydrationMode): void;
-
-    public function isEntityManagerClearingEnabled(): bool;
-
-    public function setEntityManagerClearingEnabled(bool $entityManagerClearingEnabled): void;
 
     public function getBatchSize(): int;
 
