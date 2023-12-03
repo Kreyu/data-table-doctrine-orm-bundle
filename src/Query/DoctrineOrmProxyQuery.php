@@ -10,10 +10,10 @@ use Doctrine\ORM\Tools\Pagination\CountWalker;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Pagination\PaginationData;
-use Kreyu\Bundle\DataTableBundle\PaginationAwareResultSet;
-use Kreyu\Bundle\DataTableBundle\PaginationAwareResultSetInterface;
-use Kreyu\Bundle\DataTableBundle\ResultSet;
-use Kreyu\Bundle\DataTableBundle\ResultSetInterface;
+use Kreyu\Bundle\DataTableBundle\Query\PaginationAwareResultSet;
+use Kreyu\Bundle\DataTableBundle\Query\PaginationAwareResultSetInterface;
+use Kreyu\Bundle\DataTableBundle\Query\ResultSet;
+use Kreyu\Bundle\DataTableBundle\Query\ResultSetInterface;
 use Kreyu\Bundle\DataTableBundle\Sorting\SortingData;
 use Kreyu\Bundle\DataTableBundle\Util\RewindableGeneratorIterator;
 
