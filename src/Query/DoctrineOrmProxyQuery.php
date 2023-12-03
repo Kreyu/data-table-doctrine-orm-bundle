@@ -188,36 +188,30 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     {
         $query = $paginator->getQuery();
 
-        $hasItems = true;
-
-        $cursorPosition = 0;
-
         $firstResult = $this->paginationData?->getOffset() ?? 0;
-
         $maxResults = $limit = $this->paginationData?->getPerPage();
 
         if (null === $maxResults || $maxResults > $this->batchSize) {
             $maxResults = $this->batchSize;
         }
 
-        while ($hasItems && $firstResult < $paginator->count()) {
+        $hasItems = true;
+
+        $cursorPosition = 0;
+
+        while ($hasItems && $firstResult < $paginator->count() && (null === $limit || $cursorPosition < $limit)) {
             $hasItems = false;
 
             $query
                 ->setMaxResults($maxResults)
-                ->setFirstResult($firstResult)
-            ;
+                ->setFirstResult($firstResult);
 
             foreach ($paginator as $item) {
                 yield $item;
 
                 $hasItems = true;
 
-                $cursorPosition++;
-
-                if ($limit && $cursorPosition === $limit) {
-                    return;
-                }
+                ++$cursorPosition;
             }
 
             $firstResult += $cursorPosition;
