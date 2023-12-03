@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter\Type;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter;
 
 use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\Expr\Comparison;
