@@ -132,7 +132,7 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
         // Counting the items on the PHP side would load whole data set into the memory.
         $itemCount = $paginator->count();
 
-        if (null !== $this->paginationData) {
+        if (null !== $this->paginationData?->getPerPage()) {
             return new PaginationAwareResultSet(iterator_to_array($items), $itemCount);
         }
 
