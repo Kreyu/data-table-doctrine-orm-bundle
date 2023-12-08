@@ -14,14 +14,14 @@ class DoctrineOrmResultSet extends ResultSet
     {
         $items = new RewindableGeneratorIterator(fn () => $this->getPaginatorItems($paginator, $batchSize));
 
-        $itemCount = $totalItemCount = $paginator->count();
+        $currentPageItemCount = $totalItemCount = $paginator->count();
 
         if (null !== $paginator->getQuery()->getMaxResults()) {
             $items = new \ArrayIterator(iterator_to_array($items));
-            $itemCount = iterator_count($items);
+            $currentPageItemCount = iterator_count($items);
         }
 
-        parent::__construct($items, $itemCount, $totalItemCount);
+        parent::__construct($items, $currentPageItemCount, $totalItemCount);
     }
 
     private function getPaginatorItems(Paginator $paginator, int $batchSize): \Generator
