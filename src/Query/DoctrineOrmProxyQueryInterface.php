@@ -6,6 +6,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Query;
 
 use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Paginator\PaginatorFactoryInterface;
 
 /**
  * @mixin QueryBuilder
@@ -36,4 +37,8 @@ interface DoctrineOrmProxyQueryInterface extends ProxyQueryInterface
     public function getBatchSize(): int;
 
     public function setBatchSize(int $batchSize): void;
+
+    public function getPaginatorFactory(): PaginatorFactoryInterface;
+
+    public function setPaginatorFactory(PaginatorFactoryInterface $paginatorFactory): void;
 }
