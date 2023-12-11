@@ -106,8 +106,6 @@ you can extend the `AbstractComparisonExpressionTransformer` class which simplif
 ```php
 namespace App\DataTable\Filter\ExpressionTransformer;
 
-use Doctrine\ORM\Query\Expr\Comparison;
-use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\AbstractComparisonExpressionTransformer;
 
 class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransformer
