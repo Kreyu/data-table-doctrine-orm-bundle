@@ -18,7 +18,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 class EntityFilterType extends AbstractDoctrineOrmFilterType
 {
     public function __construct(
-        private readonly ManagerRegistry $managerRegistry,
+        private readonly ?ManagerRegistry $managerRegistry = null,
     ) {
     }
 
@@ -37,14 +37,19 @@ class EntityFilterType extends AbstractDoctrineOrmFilterType
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
             ->setAllowedTypes('choice_label', ['null', 'string', 'callable'])
-            ->addNormalizer('form_options', function (Options $options, array $value) {
-                if (EntityType::class !== $options['form_type']) {
+        ;
+
+        // The persistence feature is saving only the identifier of the entity,
+        // therefore, the EntityType requires "choice_value" option with a name of the entity identifier field.
+        if (null !== $this->managerRegistry) {
+            $resolver->addNormalizer('form_options', function (Options $options, array $value) {
+                if (EntityType::class !== $options['form_type'] || null === $class = $value['class'] ?? null) {
                     return $value;
                 }
 
                 $identifiers = $this->managerRegistry
-                    ->getManagerForClass($value['class'])
-                    ?->getClassMetadata($value['class'])
+                    ->getManagerForClass($class)
+                    ?->getClassMetadata($class)
                     ->getIdentifier() ?? [];
 
                 if (1 === count($identifiers)) {
@@ -52,19 +57,17 @@ class EntityFilterType extends AbstractDoctrineOrmFilterType
                 }
 
                 return $value;
-            })
-        ;
+            });
+        }
     }
 
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
+    protected function createComparison(FilterData $data, Expr $expr): mixed
     {
-        $expression = match ($operator) {
+        return match ($data->getOperator()) {
             Operator::Equals, Operator::Contains => $expr->in(...),
             Operator::NotEquals, Operator::NotContains => $expr->notIn(...),
             default => throw new InvalidArgumentException('Operator not supported'),
         };
-
-        return $expression($queryPath, ":$parameterName");
     }
 
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string

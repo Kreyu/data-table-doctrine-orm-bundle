@@ -22,29 +22,32 @@ abstract class AbstractComparisonExpressionTransformer implements ExpressionTran
             throw new UnexpectedTypeException($expression, Comparison::class);
         }
 
-        $expr = new Expr();
-
         $leftExpr = $expression->getLeftExpr();
         $rightExpr = $expression->getRightExpr();
 
         if ($this->transformLeftExpr) {
-            $leftExpr = $this->transformLeftExpr($leftExpr, $expr);
+            $leftExpr = $this->transformLeftExpr($leftExpr);
         }
 
         if ($this->transformRightExpr) {
-            $rightExpr = $this->transformRightExpr($rightExpr, $expr);
+            $rightExpr = $this->transformRightExpr($rightExpr);
         }
 
         return new Comparison($leftExpr, $expression->getOperator(), $rightExpr);
     }
 
-    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): mixed
+    protected function transformLeftExpr(mixed $leftExpr): mixed
     {
         return $leftExpr;
     }
 
-    protected function transformRightExpr(mixed $rightExpr, Expr $expr): mixed
+    protected function transformRightExpr(mixed $rightExpr): mixed
     {
         return $rightExpr;
+    }
+
+    protected function getExpressionBuilder(): Expr
+    {
+        return new Expr();
     }
 }

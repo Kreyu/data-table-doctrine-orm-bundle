@@ -9,6 +9,7 @@ use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Translation\TranslatableMessage;
 
@@ -19,40 +20,35 @@ class BooleanFilterType extends AbstractDoctrineOrmFilterType
         $resolver
             ->setDefaults([
                 'form_type' => ChoiceType::class,
-                'form_options' => [
-                    'choices' => ['yes' => true, 'no' => false],
-                    'choice_label' => function (bool $choice, string $key) {
-                        return $this->getTranslatableMessage(ucfirst($key));
-                    },
-                ],
                 'supported_operators' => [
                     Operator::Equals,
                     Operator::NotEquals,
                 ],
                 'active_filter_formatter' => function (FilterData $data) {
-                    return $this->getTranslatableMessage($data->getValue() ? 'Yes' : 'No');
+                    return new TranslatableMessage($data->getValue() ? 'Yes' : 'No', domain: 'KreyuDataTable');
                 },
             ])
+            ->addNormalizer('form_options', function (Options $options, array $value): array {
+                if (ChoiceType::class !== $options['form_type']) {
+                    return $value;
+                }
+
+                return $value + [
+                    'choices' => ['yes' => true, 'no' => false],
+                    'choice_label' => function (bool $choice, string $key) {
+                        return new TranslatableMessage(ucfirst($key), domain: 'KreyuDataTable');
+                    },
+                ];
+            })
         ;
     }
 
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
+    protected function createComparison(FilterData $data, Expr $expr): mixed
     {
-        $expression = match ($operator) {
+        return match ($data->getOperator()) {
             Operator::Equals => $expr->eq(...),
             Operator::NotEquals => $expr->neq(...),
             default => throw new InvalidArgumentException('Operator not supported'),
         };
-
-        return $expression($queryPath, ":$parameterName");
-    }
-
-    private function getTranslatableMessage(string $value): string|TranslatableMessage
-    {
-        if (class_exists(TranslatableMessage::class)) {
-            return new TranslatableMessage($value, domain: 'KreyuDataTable');
-        }
-
-        return $value;
     }
 }

@@ -8,13 +8,13 @@ use Doctrine\ORM\Query\Expr;
 
 class TrimExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): Expr\Func
+    protected function transformLeftExpr(mixed $leftExpr): Expr\Func
     {
-        return $expr->trim($leftExpr);
+        return $this->getExpressionBuilder()->trim($leftExpr);
     }
 
-    protected function transformRightExpr(mixed $rightExpr, Expr $expr): Expr\Func
+    protected function transformRightExpr(mixed $rightExpr): Expr\Func
     {
-        return $expr->trim($rightExpr);
+        return $this->getExpressionBuilder()->trim($rightExpr);
     }
 }

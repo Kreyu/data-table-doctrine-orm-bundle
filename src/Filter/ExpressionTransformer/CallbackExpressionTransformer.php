@@ -6,9 +6,11 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer;
 
 class CallbackExpressionTransformer implements ExpressionTransformerInterface
 {
-    public function __construct(
-        private readonly \Closure $callback,
-    ) {
+    private readonly \Closure $callback;
+
+    public function __construct(callable $callback)
+    {
+        $this->callback = $callback(...);
     }
 
     public function transform(mixed $expression): mixed

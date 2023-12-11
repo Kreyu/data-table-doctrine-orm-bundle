@@ -9,6 +9,7 @@ use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
+use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -31,26 +32,42 @@ class DateTimeFilterType extends AbstractDoctrineOrmFilterType
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
             ->addNormalizer('form_options', function (Options $options, array $value): array {
-                return $value + ['widget' => 'single_text'];
-            })
-            ->addNormalizer('empty_data', function (Options $options, string|array $value): string|array {
                 if (DateTimeType::class !== $options['form_type']) {
                     return $value;
                 }
 
-                // Note: because choice and text widgets are split into three fields under "date" index,
-                //       we have to return an array with three empty "date" values to properly set the empty data.
-                return match ($options['form_options']['widget'] ?? null) {
-                    'choice', 'text' => [
-                        'date' => ['day' => '', 'month' => '', 'year' => ''],
-                    ],
-                    default => '',
-                };
+                return $value + ['widget' => 'single_text'];
+            })
+            ->addNormalizer('empty_data', function (Options $options, FilterData $value): FilterData {
+                if (DateTimeType::class !== $options['form_type']) {
+                    return $value;
+                }
+
+                $widget = $options['form_options']['widget'] ?? null;
+
+                if (in_array($widget, ['choice', 'text'])) {
+                    $value->setValue(['day' => '', 'month' => '', 'year' => '']);
+                }
+
+                return $value;
             })
         ;
     }
 
-    protected function getFilterValue(FilterData $data): \DateTimeInterface
+    protected function createComparison(FilterData $data, Expr $expr): mixed
+    {
+        return match ($data->getOperator()) {
+            Operator::Equals => $expr->eq(...),
+            Operator::NotEquals => $expr->neq(...),
+            Operator::GreaterThan => $expr->gt(...),
+            Operator::GreaterThanEquals => $expr->gte(...),
+            Operator::LessThan => $expr->lt(...),
+            Operator::LessThanEquals => $expr->lte(...),
+            default => throw new InvalidArgumentException('Operator not supported'),
+        };
+    }
+
+    protected function getParameterValue(FilterData $data): \DateTimeInterface
     {
         $value = $data->getValue();
 
@@ -78,21 +95,6 @@ class DateTimeFilterType extends AbstractDoctrineOrmFilterType
         }
 
         throw new \InvalidArgumentException(sprintf('Unable to convert data of type "%s" to DateTime object.', get_debug_type($value)));
-    }
-
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
-    {
-        $expression = match ($operator) {
-            Operator::Equals => $expr->eq(...),
-            Operator::NotEquals => $expr->neq(...),
-            Operator::GreaterThan => $expr->gt(...),
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::LessThan => $expr->lt(...),
-            Operator::LessThanEquals => $expr->lte(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
-
-        return $expression($queryPath, ":$parameterName");
     }
 
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string

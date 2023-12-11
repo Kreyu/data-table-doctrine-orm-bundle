@@ -42,7 +42,7 @@ class PaginatorFactory implements PaginatorFactoryInterface
         $paginator = new Paginator($query, $hasSingleIdentifierName && $hasJoins);
 
         // it is only safe to disable output walkers for really simple queries
-        if ($this->canDisableOutPutWalkers($queryBuilder)) {
+        if ($this->canDisableOutputWalkers($queryBuilder)) {
             $paginator->setUseOutputWalkers(false);
         }
 
@@ -52,7 +52,7 @@ class PaginatorFactory implements PaginatorFactoryInterface
     /**
      * @see https://github.com/doctrine/orm/issues/8278#issue-705517756
      */
-    private function canDisableOutPutWalkers(QueryBuilder $queryBuilder): bool
+    public function canDisableOutputWalkers(QueryBuilder $queryBuilder): bool
     {
         // Do not support queries using HAVING
         if (null !== $queryBuilder->getDQLPart('having')) {
@@ -93,7 +93,8 @@ class PaginatorFactory implements PaginatorFactoryInterface
 
         return true;
     }
-    private function hasOrderByWithToManyAssociation(QueryBuilder $queryBuilder): bool
+
+    public function hasOrderByWithToManyAssociation(QueryBuilder $queryBuilder): bool
     {
         $joinParts = $queryBuilder->getDQLPart('join');
 

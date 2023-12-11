@@ -8,13 +8,13 @@ use Doctrine\ORM\Query\Expr;
 
 class LowerExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): Expr\Func
+    protected function transformLeftExpr(mixed $leftExpr): Expr\Func
     {
-        return $expr->lower($leftExpr);
+        return $this->getExpressionBuilder()->lower($leftExpr);
     }
 
-    protected function transformRightExpr(mixed $rightExpr, Expr $expr): Expr\Func
+    protected function transformRightExpr(mixed $rightExpr): Expr\Func
     {
-        return $expr->lower($rightExpr);
+        return $this->getExpressionBuilder()->lower($rightExpr);
     }
 }

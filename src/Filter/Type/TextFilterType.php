@@ -6,7 +6,9 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class TextFilterType extends AbstractDoctrineOrmFilterType
@@ -28,23 +30,23 @@ class TextFilterType extends AbstractDoctrineOrmFilterType
         ;
     }
 
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
+    protected function createComparison(FilterData $data, Expr $expr): mixed
     {
-        $expression = match ($operator) {
+        return match ($data->getOperator()) {
             Operator::Equals => $expr->eq(...),
             Operator::NotEquals => $expr->neq(...),
             Operator::Contains, Operator::StartsWith, Operator::EndsWith => $expr->like(...),
             Operator::NotContains => $expr->notLike(...),
             default => throw new InvalidArgumentException('Operator not supported'),
         };
-
-        return $expression($queryPath, ":$parameterName");
     }
 
-    protected function getParameterValue(Operator $operator, mixed $value): string
+    protected function getParameterValue(FilterData $data): mixed
     {
-        return (string) match ($operator) {
-            Operator::Contains, Operator::NotContains => "%$value%",
+        $value = $data->getValue();
+
+        return match ($data->getOperator()) {
+            Operator::Contains => "%$value%",
             Operator::StartsWith => "$value%",
             Operator::EndsWith => "%$value",
             default => $value,

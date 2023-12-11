@@ -6,6 +6,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -29,9 +30,9 @@ class NumberFilterType extends AbstractDoctrineOrmFilterType
         ;
     }
 
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
+    protected function createComparison(FilterData $data, Expr $expr): mixed
     {
-        $expression = match ($operator) {
+        return match ($data->getOperator()) {
             Operator::Equals => $expr->eq(...),
             Operator::NotEquals => $expr->neq(...),
             Operator::GreaterThanEquals => $expr->gte(...),
@@ -40,7 +41,5 @@ class NumberFilterType extends AbstractDoctrineOrmFilterType
             Operator::LessThan => $expr->lt(...),
             default => throw new InvalidArgumentException('Operator not supported'),
         };
-
-        return $expression($queryPath, ":$parameterName");
     }
 }

@@ -20,9 +20,6 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
         $resolver
             ->setDefaults([
                 'form_type' => DateType::class,
-                'form_options' => [
-                    'widget' => 'single_text',
-                ],
                 'supported_operators' => [
                     Operator::Equals,
                     Operator::NotEquals,
@@ -32,19 +29,44 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
                     Operator::LessThanEquals,
                 ],
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
-                'empty_data' => function (Options $options) {
-                    // Note: because choice and text widgets are split into three fields,
-                    //       we have to return an array with three empty values to properly set the empty data.
-                    return match ($options['form_options']['widget'] ?? null) {
-                        'choice', 'text' => ['day' => '', 'month' => '', 'year' => ''],
-                        default => '',
-                    };
-                },
             ])
+            ->addNormalizer('form_options', function (Options $options, array $value) {
+                if (DateType::class !== $options['form_type']) {
+                    return $value;
+                }
+
+                return $value + ['widget' => 'single_text'];
+            })
+            ->addNormalizer('empty_data', function (Options $options, FilterData $value): FilterData {
+                if (DateType::class !== $options['form_type']) {
+                    return $value;
+                }
+
+                $widget = $options['form_options']['widget'] ?? null;
+
+                if (in_array($widget, ['choice', 'text'])) {
+                    $value->setValue(['day' => '', 'month' => '', 'year' => '']);
+                }
+
+                return $value;
+            })
         ;
     }
 
-    protected function getFilterValue(FilterData $data): \DateTimeInterface
+    protected function createComparison(FilterData $data, Expr $expr): mixed
+    {
+        return match ($data->getOperator()) {
+            Operator::Equals => $expr->eq(...),
+            Operator::NotEquals => $expr->neq(...),
+            Operator::GreaterThan => $expr->gt(...),
+            Operator::GreaterThanEquals => $expr->gte(...),
+            Operator::LessThan => $expr->lt(...),
+            Operator::LessThanEquals => $expr->lte(...),
+            default => throw new InvalidArgumentException('Operator not supported'),
+        };
+    }
+
+    protected function getParameterValue(FilterData $data): \DateTimeInterface
     {
         $value = $data->getValue();
 
@@ -68,27 +90,12 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
         return $dateTime;
     }
 
-    protected function getOperatorExpression(string $queryPath, string $parameterName, Operator $operator, Expr $expr): object
-    {
-        $expression = match ($operator) {
-            Operator::Equals => $expr->eq(...),
-            Operator::NotEquals => $expr->neq(...),
-            Operator::GreaterThan => $expr->gt(...),
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::LessThan => $expr->lt(...),
-            Operator::LessThanEquals => $expr->lte(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
-
-        return $expression($queryPath, ":$parameterName");
-    }
-
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string
     {
         $value = $data->getValue();
 
         if ($value instanceof \DateTimeInterface) {
-            return $value->format($options['field_options']['input_format'] ?? 'Y-m-d');
+            return $value->format($options['form_options']['input_format'] ?? 'Y-m-d');
         }
 
         return (string) $value;
