@@ -106,14 +106,13 @@ you can extend the `AbstractComparisonExpressionTransformer` class which simplif
 ```php
 namespace App\DataTable\Filter\ExpressionTransformer;
 
-use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\AbstractComparisonExpressionTransformer;
 
 class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    protected function transformLeftExpr(mixed $leftExpr, Expr $expr): mixed
+    protected function transformLeftExpr(mixed $leftExpr): mixed
     {
         return sprintf('UNACCENT(%s)', (string) $leftExpr);
         
@@ -122,7 +121,7 @@ class UnaccentExpressionTransformer extends AbstractComparisonExpressionTransfor
         // return new Expr\Func('UNACCENT', $leftExpr);
     }
 
-    protected function transformRightExpr(mixed $rightExpr, Expr $expr): mixed
+    protected function transformRightExpr(mixed $rightExpr): mixed
     {
         return sprintf('UNACCENT(%s)', (string) $rightExpr);
         
