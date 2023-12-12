@@ -57,7 +57,6 @@ class ProductDataTableType extends AbstractDataTableType
                 'trim' => true,
                 'lower' => true,
                 'upper' => true,
-                // the expression results in UPPER(LOWER(TRIM(...))))
             ])
         ;
     }
@@ -65,7 +64,7 @@ class ProductDataTableType extends AbstractDataTableType
 ```
 
 > [!IMPORTANT]  
-> When using the `trim`, `lower` or `upper` options, their transformers are called **before** those passed in the `expression_transformers` option.
+> When using the `trim`, `lower` or `upper` options, their transformers are called **before** the `expression_transformers` ones.
 
 ## Creating a Custom Expression Transformer
 
