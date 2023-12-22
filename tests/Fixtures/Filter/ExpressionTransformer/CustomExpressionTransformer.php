@@ -9,8 +9,8 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\Express
 
 class CustomExpressionTransformer implements ExpressionTransformerInterface
 {
-    public function transform(mixed $expression): mixed
+    public function transform(mixed $expression): string
     {
-        throw new BadMethodCallException('Not supported');
+        return sprintf('CUSTOM(%s)', $expression);
     }
 }

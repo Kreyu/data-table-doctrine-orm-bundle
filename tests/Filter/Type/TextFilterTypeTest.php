@@ -14,12 +14,12 @@ class TextFilterTypeTest extends DoctrineOrmFilterTypeTestCase
     {
         $expr = new Expr();
 
-        yield [Operator::Equals, $expr->eq(...)];
-        yield [Operator::NotEquals, $expr->neq(...)];
-        yield [Operator::Contains, $expr->like(...)];
-        yield [Operator::StartsWith, $expr->like(...)];
-        yield [Operator::EndsWith, $expr->like(...)];
-        yield [Operator::NotContains, $expr->notLike(...)];
+        yield 'equals' => [Operator::Equals, $expr->eq(...)];
+        yield 'not equals' => [Operator::NotEquals, $expr->neq(...)];
+        yield 'contains' => [Operator::Contains, $expr->like(...)];
+        yield 'not contains' => [Operator::NotContains, $expr->notLike(...)];
+        yield 'starts with' => [Operator::StartsWith, $expr->like(...)];
+        yield 'ends with' => [Operator::EndsWith, $expr->like(...)];
     }
 
     protected function getTestedType(): string
