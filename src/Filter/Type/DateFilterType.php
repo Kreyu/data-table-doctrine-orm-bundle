@@ -37,19 +37,6 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
 
                 return $value + ['widget' => 'single_text'];
             })
-            ->addNormalizer('empty_data', function (Options $options, FilterData $value): FilterData {
-                if (DateType::class !== $options['form_type']) {
-                    return $value;
-                }
-
-                $widget = $options['form_options']['widget'] ?? null;
-
-                if (in_array($widget, ['choice', 'text'])) {
-                    $value->setValue(['day' => '', 'month' => '', 'year' => '']);
-                }
-
-                return $value;
-            })
         ;
     }
 
@@ -76,9 +63,9 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
             $dateTime = \DateTime::createFromFormat('Y-m-d', $value);
         } elseif (is_array($value)) {
             $dateTime = (new \DateTime())->setDate(
-                year: (int) $value['date']['year'] ?: 0,
-                month: (int) $value['date']['month'] ?: 0,
-                day: (int) $value['date']['day'] ?: 0,
+                year: (int) $value['year'] ?: 0,
+                month: (int) $value['month'] ?: 0,
+                day: (int) $value['day'] ?: 0,
             );
         } else {
             throw new InvalidArgumentException(sprintf('Unable to convert data of type "%s" to DateTime object.', get_debug_type($value)));

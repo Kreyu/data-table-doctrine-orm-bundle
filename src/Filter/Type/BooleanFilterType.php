@@ -34,10 +34,8 @@ class BooleanFilterType extends AbstractDoctrineOrmFilterType
                 }
 
                 return $value + [
-                    'choices' => ['yes' => true, 'no' => false],
-                    'choice_label' => function (bool $choice, string $key) {
-                        return new TranslatableMessage(ucfirst($key), domain: 'KreyuDataTable');
-                    },
+                    'choices' => ['Yes' => true, 'No' => false],
+                    'choice_translation_domain' => 'KreyuDataTable',
                 ];
             })
         ;

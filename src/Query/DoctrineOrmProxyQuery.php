@@ -20,7 +20,8 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 {
     private int $uniqueParameterId = 0;
     private int $batchSize = 5000;
-    private ?PaginatorFactoryInterface $paginatorFactory = null;
+    private PaginatorFactoryInterface $paginatorFactory;
+    private AliasResolverInterface $aliasResolver;
 
     /**
      * @param array<string, mixed> $hints
@@ -49,8 +50,6 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 
     public function sort(SortingData $sortingData): void
     {
-        $rootAlias = current($this->queryBuilder->getRootAliases());
-
         if (empty($sortCriteria = $sortingData->getColumns())) {
             return;
         }
@@ -60,15 +59,7 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
         $this->queryBuilder->resetDQLPart('orderBy');
 
         foreach ($sortCriteria as $sortCriterion) {
-            $sortCriterionPath = (string) $sortCriterion->getPropertyPath();
-
-            $isRootAliasResolvable = !str_contains($sortCriterionPath, '.')
-                && !str_contains($sortCriterionPath, '(')
-                && !str_starts_with($sortCriterionPath, '__');
-
-            if ($isRootAliasResolvable) {
-                $sortCriterionPath = $rootAlias.'.'.$sortCriterionPath;
-            }
+            $sortCriterionPath = $this->getAliasResolver()->resolve((string) $sortCriterion->getPropertyPath(), $this->queryBuilder);
 
             $this->queryBuilder->addOrderBy($sortCriterionPath, $sortCriterion->getDirection());
 
@@ -143,5 +134,15 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     public function setPaginatorFactory(PaginatorFactoryInterface $paginatorFactory): void
     {
         $this->paginatorFactory = $paginatorFactory;
+    }
+
+    public function getAliasResolver(): AliasResolverInterface
+    {
+        return $this->aliasResolver ??= new AliasResolver();
+    }
+
+    public function setAliasResolver(AliasResolverInterface $aliasResolver): void
+    {
+        $this->aliasResolver = $aliasResolver;
     }
 }

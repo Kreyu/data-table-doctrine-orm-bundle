@@ -41,4 +41,8 @@ interface DoctrineOrmProxyQueryInterface extends ProxyQueryInterface
     public function getPaginatorFactory(): PaginatorFactoryInterface;
 
     public function setPaginatorFactory(PaginatorFactoryInterface $paginatorFactory): void;
+
+    public function getAliasResolver(): AliasResolverInterface;
+
+    public function setAliasResolver(AliasResolverInterface $aliasResolver): void;
 }

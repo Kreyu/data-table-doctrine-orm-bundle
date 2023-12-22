@@ -10,9 +10,10 @@ use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterHandlerInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvents;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParameterEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 
 class DoctrineOrmFilterHandler implements FilterHandlerInterface
@@ -36,57 +37,53 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             throw new UnexpectedTypeException($query, DoctrineOrmProxyQueryInterface::class);
         }
 
-        $queryBuilder = $query->getQueryBuilder();
-
         $operator = $data->getOperator() ?? $filter->getConfig()->getDefaultOperator();
 
         if (!in_array($operator, $filter->getConfig()->getSupportedOperators())) {
             return;
         }
 
-        $rootAlias = current($queryBuilder->getRootAliases());
+        $queryBuilder = $query->getQueryBuilder();
 
-        $queryPath = $filter->getQueryPath($query);
-
-        // TODO
-        if ($rootAlias && !str_contains($queryPath, '.') && $filter->getConfig()->getOption('auto_alias_resolving')) {
-            $queryPath = $rootAlias.'.'.$queryPath;
-        }
+        $queryPath = $query->getAliasResolver()->resolve($filter->getQueryPath(), $queryBuilder);
 
         $parameterName = $filter->getFormName().'_'.$query->getUniqueParameterId();
 
-        $comparison = ($this->comparisonFactory)($data, $queryPath, new Expr());
+        $expression = $this->createExpression($data, $queryPath, $parameterName);
 
-        $expression = $comparison($queryPath, ":$parameterName");
+        $event = new PreApplyExpressionEvent($filter, $query, $data, $expression);
 
-        $expression = $this->applyExpressionTransformers($expression, $filter);
+        $this->dispatch(DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION, $event);
 
-        $queryBuilder
-            ->andWhere($expression)
-            ->setParameter($parameterName, ($this->parameterValueTransformer)($data))
-        ;
+        $queryBuilder->andWhere($event->getExpression());
+
+        $parameterValue = $this->getParameterValue($data);
+
+        $event = new PreSetParameterEvent($filter, $query, $data, $parameterName, $parameterValue);
+
+        $this->dispatch(DoctrineOrmFilterEvents::PRE_SET_PARAMETER, $event);
+
+        $queryBuilder->setParameter($event->getParameterName(), $event->getParameterValue());
     }
 
-    private function applyExpressionTransformers(mixed $expression, FilterInterface $filter): mixed
+    private function dispatch(string $eventName, DoctrineOrmFilterEvent $event): void
     {
-        $expressionTransformers = (array) $filter->getConfig()->getOption('expression_transformers');
+        $dispatcher = $event->getFilter()->getConfig()->getEventDispatcher();
 
-        if ($filter->getConfig()->getOption('trim')) {
-            array_unshift($expressionTransformers, new TrimExpressionTransformer());
+        if ($dispatcher->hasListeners($eventName)) {
+            $dispatcher->dispatch($event, $eventName);
         }
+    }
 
-        if ($filter->getConfig()->getOption('lower')) {
-            array_unshift($expressionTransformers, new LowerExpressionTransformer());
-        }
+    private function createExpression(FilterData $data, string $queryPath, string $parameterName): mixed
+    {
+        $comparison = ($this->comparisonFactory)($data, new Expr());
 
-        if ($filter->getConfig()->getOption('upper')) {
-            array_unshift($expressionTransformers, new UpperExpressionTransformer());
-        }
+        return $comparison($queryPath, ":$parameterName");
+    }
 
-        foreach ($expressionTransformers as $expressionTransformer) {
-            $expression = $expressionTransformer($expression);
-        }
-
-        return $expression;
+    private function getParameterValue(FilterData $data): mixed
+    {
+        return ($this->parameterValueTransformer)($data);
     }
 }

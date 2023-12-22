@@ -54,14 +54,14 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType implements Filte
         $handler = $filter->getConfig()->getHandler();
 
         if (null !== $dateFrom = $value['from'] ?? null) {
-            $dateFrom = \DateTime::createFromInterface($dateFrom);
+            $dateFrom = \DateTimeImmutable::createFromInterface($dateFrom);
             $dateFrom->setTime(0, 0);
 
             $handler->handle($query, new FilterData($dateFrom, Operator::GreaterThanEquals), $filter);
         }
 
         if (null !== $dateTo = $value['to'] ?? null) {
-            $valueTo = \DateTime::createFromInterface($dateTo)->modify('+1 day');
+            $valueTo = \DateTimeImmutable::createFromInterface($dateTo)->modify('+1 day');
             $valueTo->setTime(0, 0);
 
             $handler->handle($query, new FilterData($dateTo, Operator::LessThan), $filter);
