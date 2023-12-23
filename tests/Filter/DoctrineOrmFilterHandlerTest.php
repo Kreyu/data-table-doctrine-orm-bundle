@@ -1,85 +1,164 @@
 <?php
 
+/** @noinspection PhpUnhandledExceptionInspection */
+
 declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter;
 
-use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterConfigInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
-use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvents;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParameterEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\DoctrineOrmFilterHandler;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Filter\ExpressionTransformer\CustomExpressionTransformer;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Query\NotSupportedProxyQuery;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class DoctrineOrmFilterHandlerTest extends TestCase
 {
-    public function testHandlingWithNotSupportedProxyQueryClass(): void
+    private MockObject&FilterInterface $filter;
+    private MockObject&DoctrineOrmProxyQueryInterface $query;
+    private MockObject&FilterData $data;
+    private MockObject&EventDispatcherInterface $eventDispatcher;
+
+    protected function setUp(): void
+    {
+        $filter = $this->createFilterMock();
+        $filterConfig = $this->createFilterConfigMock();
+        $eventDispatcher = $this->createEventDispatcherMock();
+
+        $filter->method('getConfig')->willReturn($filterConfig);
+        $filterConfig->method('getEventDispatcher')->willReturn($eventDispatcher);
+
+        $this->filter = $filter;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->query = $this->createDoctrineOrmProxyQueryMock();
+        $this->data = $this->createFilterDataMock();
+    }
+
+    public function testItThrowsExceptionWithNotSupportedProxyQueryClass(): void
     {
         $query = new NotSupportedProxyQuery();
 
         $this->expectExceptionObject(new UnexpectedTypeException($query, DoctrineOrmProxyQueryInterface::class));
 
-        $this->handle($query);
+        $this->createHandler()->handle($query, $this->data, $this->filter);
     }
 
-    private function createHandler(): DoctrineOrmFilterHandler
+    public function testItAppliesExpression(): void
+    {
+        ($queryBuilder = $this->createQueryBuilderMock())
+            ->expects($this->once())
+            ->method('andWhere')
+            ->willReturnCallback(function (mixed $expression) {
+                $this->assertEquals('expression', $expression);
+            });
+
+        $this->query->method('getQueryBuilder')->willReturn($queryBuilder);
+
+        $this->createHandler(expression: 'expression')->handle($this->query, $this->data, $this->filter);
+    }
+
+    public function testItSetsParameter(): void
+    {
+        $this->filter->method('getFormName')->willReturn('filter');
+        $this->query->method('getUniqueParameterId')->willReturn(123);
+
+        ($queryBuilder = $this->createQueryBuilderMock())
+            ->expects($this->once())
+            ->method('setParameter')
+            ->willReturnCallback(function ($name, $value) {
+                $this->assertEquals('filter_123', $name);
+                $this->assertEquals('value', $value);
+            });
+
+        $this->query->method('getQueryBuilder')->willReturn($queryBuilder);
+
+        $this->createHandler(value: 'value')->handle($this->query, $this->data, $this->filter);
+    }
+
+    public function testItDispatchesEvents(): void
+    {
+        $this->eventDispatcher
+            ->expects($matcher = $this->exactly(2))
+            ->method('dispatch')
+            ->willReturnCallback(function (DoctrineOrmFilterEvent $event, string $eventName) use ($matcher) {
+                // @phpstan-ignore-next-line
+                $this->assertInstanceOf(match ($matcher->numberOfInvocations()) {
+                    1 => PreApplyExpressionEvent::class,
+                    2 => PreSetParameterEvent::class,
+                }, $event);
+
+                // @phpstan-ignore-next-line
+                $this->assertEquals(match ($matcher->numberOfInvocations()) {
+                    1 => DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION,
+                    2 => DoctrineOrmFilterEvents::PRE_SET_PARAMETER,
+                }, $eventName);
+
+                $this->assertEquals($this->filter, $event->getFilter());
+                $this->assertEquals($this->query, $event->getQuery());
+                $this->assertEquals($this->data, $event->getData());
+
+                return $event;
+            });
+
+        $this->createHandler()->handle($this->query, $this->data, $this->filter);
+    }
+
+    private function createHandler(mixed $expression = null, mixed $value = null): DoctrineOrmFilterHandler
     {
         return new DoctrineOrmFilterHandler(
-            fn () => (new Expr())->eq(...),
-            fn () => 'value',
+            // @phpstan-ignore-next-line
+            fn () => fn () => $expression,
+            fn () => $value,
         );
     }
 
-    private function handle(ProxyQueryInterface $query = null, FilterData $data = null, FilterInterface $filter = null): void
+    private function createFilterMock(): MockObject&FilterInterface
     {
-        $this->createHandler()->handle(
-            $query ?? $this->createDoctrineOrmProxyQueryMock(),
-            $data ?? $this->createFilterDataMock(),
-            $filter ?? $this->createFilterMock(),
-        );
-    }
-
-    private function createDoctrineOrmProxyQueryMock(): DoctrineOrmProxyQueryInterface&MockObject
-    {
-        return $this->createMock(DoctrineOrmProxyQueryInterface::class);
-    }
-
-    private function createQueryBuilderMock(): QueryBuilder&MockObject
-    {
-        return $this->createMock(QueryBuilder::class);
-    }
-
-    private function createFilterDataMock(): FilterData&MockObject
-    {
-        return $this->createMock(FilterData::class);
-    }
-
-    private function createFilterMock(array $options = []): FilterInterface&MockObject
-    {
-        $filterConfig = $this->createMock(FilterConfigInterface::class);
-        $filterConfig->method('getOption')->willReturnCallback(function (string $option) use ($options) {
-            return $options[$option] ?? null;
-        });
-
-        $filter = $this->createMock(FilterInterface::class);
-        $filter->method('getConfig')->willReturn($filterConfig);
-
-        return $filter;
+        return $this->createMock(FilterInterface::class);
     }
 
     private function createFilterConfigMock(): FilterConfigInterface&MockObject
     {
-        return $this->createMock(FilterConfigInterface::class);
+        $filterConfig = $this->createMock(FilterConfigInterface::class);
+        $filterConfig->method('getSupportedOperators')->willReturn([Operator::Equals]);
+
+        return $filterConfig;
+    }
+
+    private function createFilterDataMock(): FilterData&MockObject
+    {
+        $filterData = $this->createMock(FilterData::class);
+        $filterData->method('getOperator')->willReturn(Operator::Equals);
+
+        return $filterData;
+    }
+
+    private function createDoctrineOrmProxyQueryMock(): MockObject&DoctrineOrmProxyQueryInterface
+    {
+        return $this->createMock(DoctrineOrmProxyQueryInterface::class);
+    }
+
+    private function createQueryBuilderMock(): MockObject&QueryBuilder
+    {
+        return $this->createMock(QueryBuilder::class);
+    }
+
+    private function createEventDispatcherMock(): MockObject&EventDispatcherInterface
+    {
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->method('hasListeners')->willReturn(true);
+
+        return $eventDispatcher;
     }
 }

@@ -104,7 +104,7 @@ class PaginatorFactory implements PaginatorFactoryInterface
 
         $orderByParts = $queryBuilder->getDQLPart('orderBy');
 
-        if (empty($sortCriteria) && empty($orderByParts)) {
+        if (empty($orderByParts)) {
             return false;
         }
 

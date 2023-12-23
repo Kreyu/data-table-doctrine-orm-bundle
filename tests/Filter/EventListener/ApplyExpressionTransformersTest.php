@@ -22,40 +22,14 @@ use PHPUnit\Framework\TestCase;
 
 class ApplyExpressionTransformersTest extends TestCase
 {
+    private ApplyExpressionTransformers $listener;
+
     protected function setUp(): void
     {
         $this->listener = new ApplyExpressionTransformers();
     }
 
-    public static function builtInExpressionTransformersOptionsProvider(): \Generator
-    {
-        yield 'trim' => ['option' => 'trim', 'transformer' => new TrimExpressionTransformer()];
-        yield 'lower' => ['option' => 'lower', 'transformer' => new LowerExpressionTransformer()];
-        yield 'upper' => ['option' => 'upper', 'transformer' => new UpperExpressionTransformer()];
-    }
-
-    #[DataProvider('builtInExpressionTransformersOptionsProvider')]
-    public function testBuiltInExpressionTransformerOptions(string $option, ExpressionTransformerInterface $expressionTransformer): void
-    {
-        $filter = $this->createFilterMock([
-            $option => true,
-            'expression_transformers' => [],
-        ]);
-
-        $query = $this->createDoctrineOrmProxyQueryMock();
-
-        $data = $this->createFilterDataMock();
-
-        $expression = new Expr\Comparison('foo', '=', 'bar');
-
-        $event = new PreApplyExpressionEvent($filter, $query, $data, $expression);
-
-        $this->listener->preApplyExpression($event);
-
-        $this->assertEquals($expressionTransformer->transform($expression), $event->getExpression());
-    }
-
-    public function testBuiltInExpressionTransformersOptionsChainWithCustomOnes(): void
+    public function testItChainsBuiltInTransformersWithCustomOnes(): void
     {
         $filter = $this->createFilterMock([
             'trim' => true,
@@ -66,21 +40,27 @@ class ApplyExpressionTransformersTest extends TestCase
             ],
         ]);
 
-        $query = $this->createDoctrineOrmProxyQueryMock();
+        $expression = $expectedExpression = new Expr\Comparison('foo', '=', 'bar');
 
-        $data = $this->createFilterDataMock();
-
-        $expression = new Expr\Comparison('foo', '=', 'bar');
-
-        $event = new PreApplyExpressionEvent($filter, $query, $data, $expression);
+        $event = new PreApplyExpressionEvent(
+            $filter,
+            $this->createDoctrineOrmProxyQueryMock(),
+            $this->createFilterDataMock(),
+            $expression,
+        );
 
         $this->listener->preApplyExpression($event);
 
-        $expectedExpression = $expression;
-        $expectedExpression = (new TrimExpressionTransformer())->transform($expectedExpression);
-        $expectedExpression = (new LowerExpressionTransformer())->transform($expectedExpression);
-        $expectedExpression = (new UpperExpressionTransformer())->transform($expectedExpression);
-        $expectedExpression = (new CustomExpressionTransformer())->transform($expectedExpression);
+        $expressionTransformers = [
+            new TrimExpressionTransformer(),
+            new LowerExpressionTransformer(),
+            new UpperExpressionTransformer(),
+            new CustomExpressionTransformer(),
+        ];
+
+        foreach ($expressionTransformers as $expressionTransformer) {
+            $expectedExpression = $expressionTransformer->transform($expectedExpression);
+        }
 
         $this->assertEquals($expectedExpression, $event->getExpression());
     }
