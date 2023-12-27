@@ -21,7 +21,7 @@ class ExpressionFactory implements ExpressionFactoryInterface
 
         $queryPath = $query->getAliasResolver()->resolve($filter->getQueryPath(), $query->getQueryBuilder());
 
-        $operator = $data->getOperator();
+        $operator = $data->getOperator() ?? $filter->getConfig()->getDefaultOperator();
 
         $expr = new Expr();
 

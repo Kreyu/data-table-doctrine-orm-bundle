@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
-use Doctrine\ORM\Query\Expr;
-use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;

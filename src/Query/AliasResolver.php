@@ -24,7 +24,7 @@ class AliasResolver implements AliasResolverInterface
         }
 
         foreach ($queryBuilder->getDQLPart('select') ?? [] as $select) {
-            $parts = preg_split("/ as( hidden)? /i", $select->getParts()[0]);
+            $parts = preg_split('/ as( hidden)? /i', $select->getParts()[0]);
 
             if ($path === ($parts[1] ?? $parts[0])) {
                 return false;
