@@ -6,6 +6,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
@@ -15,19 +16,23 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class DateFilterType extends AbstractDoctrineOrmFilterType
 {
+    public function buildFilter(FilterBuilderInterface $builder, array $options): void
+    {
+        $builder->setSupportedOperators([
+            Operator::Equals,
+            Operator::NotEquals,
+            Operator::GreaterThan,
+            Operator::GreaterThanEquals,
+            Operator::LessThan,
+            Operator::LessThanEquals,
+        ]);
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setDefaults([
                 'form_type' => DateType::class,
-                'supported_operators' => [
-                    Operator::Equals,
-                    Operator::NotEquals,
-                    Operator::GreaterThan,
-                    Operator::GreaterThanEquals,
-                    Operator::LessThan,
-                    Operator::LessThanEquals,
-                ],
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
             ->addNormalizer('form_options', function (Options $options, array $value) {
@@ -38,43 +43,6 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
                 return $value + ['widget' => 'single_text'];
             })
         ;
-    }
-
-    protected function createComparison(FilterData $data, Expr $expr): mixed
-    {
-        return match ($data->getOperator()) {
-            Operator::Equals => $expr->eq(...),
-            Operator::NotEquals => $expr->neq(...),
-            Operator::GreaterThan => $expr->gt(...),
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::LessThan => $expr->lt(...),
-            Operator::LessThanEquals => $expr->lte(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
-    }
-
-    protected function getParameterValue(FilterData $data): \DateTimeInterface
-    {
-        $value = $data->getValue();
-
-        if ($value instanceof \DateTimeInterface) {
-            $dateTime = $value;
-        } elseif (is_string($value)) {
-            $dateTime = \DateTime::createFromFormat('Y-m-d', $value);
-        } elseif (is_array($value)) {
-            $dateTime = (new \DateTime())->setDate(
-                year: (int) $value['year'] ?: 0,
-                month: (int) $value['month'] ?: 0,
-                day: (int) $value['day'] ?: 0,
-            );
-        } else {
-            throw new InvalidArgumentException(sprintf('Unable to convert data of type "%s" to DateTime object.', get_debug_type($value)));
-        }
-
-        $dateTime = \DateTime::createFromInterface($dateTime);
-        $dateTime->setTime(0, 0);
-
-        return $dateTime;
     }
 
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string

@@ -44,8 +44,8 @@ class ApplyExpressionTransformersTest extends TestCase
 
         $event = new PreApplyExpressionEvent(
             $filter,
-            $this->createDoctrineOrmProxyQueryMock(),
             $this->createFilterDataMock(),
+            $this->createDoctrineOrmProxyQueryMock(),
             $expression,
         );
 

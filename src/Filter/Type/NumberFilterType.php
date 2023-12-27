@@ -6,6 +6,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
@@ -13,33 +14,22 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class NumberFilterType extends AbstractDoctrineOrmFilterType
 {
-    public function configureOptions(OptionsResolver $resolver): void
+    public function buildFilter(FilterBuilderInterface $builder, array $options): void
     {
-        $resolver
-            ->setDefaults([
-                'form_type' => NumberType::class,
-                'supported_operators' => [
-                    Operator::Equals,
-                    Operator::NotEquals,
-                    Operator::GreaterThanEquals,
-                    Operator::GreaterThan,
-                    Operator::LessThanEquals,
-                    Operator::LessThan,
-                ],
-            ])
-        ;
+        $builder->setSupportedOperators([
+            Operator::Equals,
+            Operator::NotEquals,
+            Operator::Contains,
+            Operator::NotContains,
+            Operator::StartsWith,
+            Operator::EndsWith,
+        ]);
     }
 
-    protected function createComparison(FilterData $data, Expr $expr): mixed
+    public function configureOptions(OptionsResolver $resolver): void
     {
-        return match ($data->getOperator()) {
-            Operator::Equals => $expr->eq(...),
-            Operator::NotEquals => $expr->neq(...),
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::GreaterThan => $expr->gt(...),
-            Operator::LessThanEquals => $expr->lte(...),
-            Operator::LessThan => $expr->lt(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
+        $resolver->setDefaults([
+            'form_type' => NumberType::class,
+        ]);
     }
 }

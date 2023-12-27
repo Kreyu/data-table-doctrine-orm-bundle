@@ -7,6 +7,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 use Doctrine\ORM\Query\Expr;
 use Doctrine\Persistence\ManagerRegistry;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
@@ -22,17 +23,21 @@ class EntityFilterType extends AbstractDoctrineOrmFilterType
     ) {
     }
 
+    public function buildFilter(FilterBuilderInterface $builder, array $options): void
+    {
+        $builder->setSupportedOperators([
+            Operator::Equals,
+            Operator::NotEquals,
+            Operator::In,
+            Operator::NotIn,
+        ]);
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setDefaults([
                 'form_type' => EntityType::class,
-                'supported_operators' => [
-                    Operator::Equals,
-                    Operator::NotEquals,
-                    Operator::Contains,
-                    Operator::NotContains,
-                ],
                 'choice_label' => null,
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
@@ -59,15 +64,6 @@ class EntityFilterType extends AbstractDoctrineOrmFilterType
                 return $value;
             });
         }
-    }
-
-    protected function createComparison(FilterData $data, Expr $expr): mixed
-    {
-        return match ($data->getOperator()) {
-            Operator::Equals, Operator::Contains => $expr->in(...),
-            Operator::NotEquals, Operator::NotContains => $expr->notIn(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
     }
 
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string

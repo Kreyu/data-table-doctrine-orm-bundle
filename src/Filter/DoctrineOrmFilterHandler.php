@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter;
 
-use Doctrine\ORM\Query\Expr;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterHandlerInterface;
@@ -13,22 +12,19 @@ use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvents;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParameterEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParametersEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionFactory\ExpressionFactory;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionFactory\ExpressionFactoryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ParameterFactory\ParameterFactory;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ParameterFactory\ParameterFactoryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 
 class DoctrineOrmFilterHandler implements FilterHandlerInterface
 {
-    private readonly \Closure $comparisonFactory;
-    private readonly \Closure $parameterValueTransformer;
-
-    /**
-     * @param callable(FilterData $data, Expr $expr): Expr\Comparison $comparisonFactory
-     * @param callable(FilterData $data): mixed $parameterValueTransformer
-     */
-    public function __construct(callable $comparisonFactory, callable $parameterValueTransformer)
-    {
-        $this->comparisonFactory = $comparisonFactory(...);
-        $this->parameterValueTransformer = $parameterValueTransformer(...);
+    public function __construct(
+        private readonly ExpressionFactoryInterface $expressionFactory = new ExpressionFactory(),
+        private readonly ParameterFactoryInterface $parameterFactory = new ParameterFactory(),
+    ) {
     }
 
     public function handle(ProxyQueryInterface $query, FilterData $data, FilterInterface $filter): void
@@ -37,33 +33,25 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             throw new UnexpectedTypeException($query, DoctrineOrmProxyQueryInterface::class);
         }
 
-        $operator = $data->getOperator() ?? $filter->getConfig()->getDefaultOperator();
+        $parameters = $this->parameterFactory->createParameters($filter, $data, $query);
 
-        if (!in_array($operator, $filter->getConfig()->getSupportedOperators())) {
-            return;
-        }
+        $event = new PreSetParametersEvent($filter, $data, $query, $parameters);
+
+        $this->dispatch(DoctrineOrmFilterEvents::PRE_SET_PARAMETERS, $event);
 
         $queryBuilder = $query->getQueryBuilder();
 
-        $queryPath = $query->getAliasResolver()->resolve($filter->getQueryPath(), $queryBuilder);
+        foreach ($event->getParameters() as $parameter) {
+            $queryBuilder->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
+        }
 
-        $parameterName = $filter->getFormName().'_'.$query->getUniqueParameterId();
+        $expression = $this->expressionFactory->createExpression($filter, $data, $query, $event->getParameters());
 
-        $expression = $this->createExpression($data, $queryPath, $parameterName);
-
-        $event = new PreApplyExpressionEvent($filter, $query, $data, $expression);
+        $event = new PreApplyExpressionEvent($filter, $data, $query, $expression);
 
         $this->dispatch(DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION, $event);
 
         $queryBuilder->andWhere($event->getExpression());
-
-        $parameterValue = $this->getParameterValue($data);
-
-        $event = new PreSetParameterEvent($filter, $query, $data, $parameterName, $parameterValue);
-
-        $this->dispatch(DoctrineOrmFilterEvents::PRE_SET_PARAMETER, $event);
-
-        $queryBuilder->setParameter($event->getParameterName(), $event->getParameterValue());
     }
 
     private function dispatch(string $eventName, DoctrineOrmFilterEvent $event): void
@@ -73,17 +61,5 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
         if ($dispatcher->hasListeners($eventName)) {
             $dispatcher->dispatch($event, $eventName);
         }
-    }
-
-    private function createExpression(FilterData $data, string $queryPath, string $parameterName): mixed
-    {
-        $comparison = ($this->comparisonFactory)($data, new Expr());
-
-        return $comparison($queryPath, ":$parameterName");
-    }
-
-    private function getParameterValue(FilterData $data): mixed
-    {
-        return ($this->parameterValueTransformer)($data);
     }
 }

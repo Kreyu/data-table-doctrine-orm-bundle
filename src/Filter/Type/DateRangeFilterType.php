@@ -13,6 +13,7 @@ use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Form\Type\DateRangeType;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\DoctrineOrmFilterHandler;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Translation\TranslatableMessage;
@@ -22,6 +23,11 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType implements Filte
     public function buildFilter(FilterBuilderInterface $builder, array $options): void
     {
         $builder->setHandler($this);
+        $builder->setOperatorSelectable(false);
+        $builder->setDefaultOperator(Operator::Between);
+        $builder->setSupportedOperators([
+            Operator::Between,
+        ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -31,15 +37,6 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType implements Filte
                 'form_type' => DateRangeType::class,
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
-            ->addNormalizer('empty_data', function (Options $options, FilterData $value): FilterData {
-                if (DateRangeType::class !== $options['form_type']) {
-                    return $value;
-                }
-
-                $value->setValue(['from' => '', 'to' => '']);
-
-                return $value;
-            })
         ;
     }
 
@@ -47,34 +44,34 @@ class DateRangeFilterType extends AbstractDoctrineOrmFilterType implements Filte
     {
         $value = $data->getValue();
 
-        if (is_array($value)) {
-            return;
+        $valueFrom = $value['from'] ?? null;
+        $valueTo = $value['to'] ?? null;
+
+        if ($valueFrom) {
+            $valueFrom = \DateTime::createFromInterface($valueFrom);
+            $valueFrom->setTime(0, 0);
         }
 
-        $handler = $filter->getConfig()->getHandler();
-
-        if (null !== $dateFrom = $value['from'] ?? null) {
-            $dateFrom = \DateTime::createFromInterface($dateFrom);
-            $dateFrom->setTime(0, 0);
-
-            $handler->handle($query, new FilterData($dateFrom, Operator::GreaterThanEquals), $filter);
-        }
-
-        if (null !== $dateTo = $value['to'] ?? null) {
-            $valueTo = \DateTime::createFromInterface($dateTo)->modify('+1 day');
+        if ($valueTo) {
+            $valueTo = \DateTime::createFromInterface($valueTo)->modify('+1 day');
             $valueTo->setTime(0, 0);
-
-            $handler->handle($query, new FilterData($dateTo, Operator::LessThan), $filter);
         }
-    }
 
-    protected function createComparison(FilterData $data, Expr $expr): mixed
-    {
-        return match ($data->getOperator()) {
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::LessThan => $expr->lt(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
+        $data = new FilterData();
+
+        if ($valueFrom && $valueTo) {
+            $data->setValue(['from' => $valueFrom, 'to' => $valueTo]);
+            $data->setOperator(Operator::Between);
+        } elseif ($valueFrom) {
+            $data->setValue($valueFrom);
+            $data->setOperator(Operator::GreaterThanEquals);
+        } elseif ($valueTo) {
+            $data->setValue($valueTo);
+            $data->setOperator(Operator::LessThan);
+        }
+
+        $handler = new DoctrineOrmFilterHandler();
+        $handler->handle($query, $data, $filter);
     }
 
     private function getFormattedActiveFilterString(FilterData $data): string|TranslatableMessage

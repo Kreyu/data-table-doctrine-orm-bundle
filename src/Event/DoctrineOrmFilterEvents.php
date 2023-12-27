@@ -8,5 +8,5 @@ final class DoctrineOrmFilterEvents
 {
     public const PRE_APPLY_EXPRESSION = 'kreyu_doctrine_orm_data_table.filter.pre_apply_expression';
 
-    public const PRE_SET_PARAMETER = 'kreyu_doctrine_orm_data_table.filter.pre_set_parameter';
+    public const PRE_SET_PARAMETERS = 'kreyu_doctrine_orm_data_table.filter.pre_set_parameters';
 }

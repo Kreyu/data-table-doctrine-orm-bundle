@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter;
 
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterConfigInterface;
@@ -15,8 +16,10 @@ use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvents;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParameterEvent;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParametersEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\DoctrineOrmFilterHandler;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionFactory\ExpressionFactoryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ParameterFactory\ParameterFactoryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Query\NotSupportedProxyQuery;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -70,20 +73,17 @@ class DoctrineOrmFilterHandlerTest extends TestCase
 
     public function testItSetsParameter(): void
     {
-        $this->filter->method('getFormName')->willReturn('filter');
-        $this->query->method('getUniqueParameterId')->willReturn(123);
-
         ($queryBuilder = $this->createQueryBuilderMock())
             ->expects($this->once())
             ->method('setParameter')
             ->willReturnCallback(function ($name, $value) {
-                $this->assertEquals('filter_123', $name);
-                $this->assertEquals('value', $value);
+                $this->assertEquals('foo', $name);
+                $this->assertEquals('bar', $value);
             });
 
         $this->query->method('getQueryBuilder')->willReturn($queryBuilder);
 
-        $this->createHandler(value: 'value')->handle($this->query, $this->data, $this->filter);
+        $this->createHandler(parameters: [new Parameter('foo', 'bar')])->handle($this->query, $this->data, $this->filter);
     }
 
     public function testItDispatchesEvents(): void
@@ -94,14 +94,14 @@ class DoctrineOrmFilterHandlerTest extends TestCase
             ->willReturnCallback(function (DoctrineOrmFilterEvent $event, string $eventName) use ($matcher) {
                 // @phpstan-ignore-next-line
                 $this->assertInstanceOf(match ($matcher->numberOfInvocations()) {
-                    1 => PreApplyExpressionEvent::class,
-                    2 => PreSetParameterEvent::class,
+                    1 => PreSetParametersEvent::class,
+                    2 => PreApplyExpressionEvent::class,
                 }, $event);
 
                 // @phpstan-ignore-next-line
                 $this->assertEquals(match ($matcher->numberOfInvocations()) {
-                    1 => DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION,
-                    2 => DoctrineOrmFilterEvents::PRE_SET_PARAMETER,
+                    1 => DoctrineOrmFilterEvents::PRE_SET_PARAMETERS,
+                    2 => DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION,
                 }, $eventName);
 
                 $this->assertEquals($this->filter, $event->getFilter());
@@ -114,13 +114,15 @@ class DoctrineOrmFilterHandlerTest extends TestCase
         $this->createHandler()->handle($this->query, $this->data, $this->filter);
     }
 
-    private function createHandler(mixed $expression = null, mixed $value = null): DoctrineOrmFilterHandler
+    private function createHandler(mixed $expression = null, array $parameters = []): DoctrineOrmFilterHandler
     {
-        return new DoctrineOrmFilterHandler(
-            // @phpstan-ignore-next-line
-            fn () => fn () => $expression,
-            fn () => $value,
-        );
+        $expressionFactory = $this->createMock(ExpressionFactoryInterface::class);
+        $expressionFactory->method('createExpression')->willReturn($expression);
+
+        $parameterFactory = $this->createMock(ParameterFactoryInterface::class);
+        $parameterFactory->method('createParameters')->willReturn($parameters);
+
+        return new DoctrineOrmFilterHandler($expressionFactory, $parameterFactory);
     }
 
     private function createFilterMock(): MockObject&FilterInterface

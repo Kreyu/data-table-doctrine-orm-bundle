@@ -13,8 +13,8 @@ class DoctrineOrmFilterEvent extends Event
 {
     public function __construct(
         private readonly FilterInterface $filter,
-        private readonly ProxyQueryInterface $query,
         private readonly FilterData $data,
+        private readonly ProxyQueryInterface $query,
     ) {
     }
 
@@ -23,13 +23,13 @@ class DoctrineOrmFilterEvent extends Event
         return $this->filter;
     }
 
-    public function getQuery(): ProxyQueryInterface
-    {
-        return $this->query;
-    }
-
     public function getData(): FilterData
     {
         return $this->data;
+    }
+
+    public function getQuery(): ProxyQueryInterface
+    {
+        return $this->query;
     }
 }

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
-use Doctrine\ORM\Query\Expr;
-use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
@@ -15,19 +14,23 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class DateTimeFilterType extends AbstractDoctrineOrmFilterType
 {
+    public function buildFilter(FilterBuilderInterface $builder, array $options): void
+    {
+        $builder->setSupportedOperators([
+            Operator::Equals,
+            Operator::NotEquals,
+            Operator::GreaterThan,
+            Operator::GreaterThanEquals,
+            Operator::LessThan,
+            Operator::LessThanEquals,
+        ]);
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setDefaults([
                 'form_type' => DateTimeType::class,
-                'supported_operators' => [
-                    Operator::Equals,
-                    Operator::NotEquals,
-                    Operator::GreaterThan,
-                    Operator::GreaterThanEquals,
-                    Operator::LessThan,
-                    Operator::LessThanEquals,
-                ],
                 'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
             ])
             ->addNormalizer('form_options', function (Options $options, array $value): array {
@@ -38,19 +41,6 @@ class DateTimeFilterType extends AbstractDoctrineOrmFilterType
                 return $value + ['widget' => 'single_text'];
             })
         ;
-    }
-
-    protected function createComparison(FilterData $data, Expr $expr): mixed
-    {
-        return match ($data->getOperator()) {
-            Operator::Equals => $expr->eq(...),
-            Operator::NotEquals => $expr->neq(...),
-            Operator::GreaterThan => $expr->gt(...),
-            Operator::GreaterThanEquals => $expr->gte(...),
-            Operator::LessThan => $expr->lt(...),
-            Operator::LessThanEquals => $expr->lte(...),
-            default => throw new InvalidArgumentException('Operator not supported'),
-        };
     }
 
     private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string

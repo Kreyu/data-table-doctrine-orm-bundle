@@ -4,28 +4,32 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Event;
 
+use Doctrine\ORM\Query\Parameter;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 
-class PreApplyExpressionEvent extends DoctrineOrmFilterEvent
+class PreSetParametersEvent extends DoctrineOrmFilterEvent
 {
     public function __construct(
         FilterInterface $filter,
         FilterData $data,
         ProxyQueryInterface $query,
-        private mixed $expression,
+        private array $parameters,
     ) {
         parent::__construct($filter, $data, $query);
     }
 
-    public function getExpression(): mixed
+    /**
+     * @return array<Parameter>
+     */
+    public function getParameters(): array
     {
-        return $this->expression;
+        return $this->parameters;
     }
 
-    public function setExpression(mixed $expression): void
+    public function setParameters(array $parameters): void
     {
-        $this->expression = $expression;
+        $this->parameters = $parameters;
     }
 }

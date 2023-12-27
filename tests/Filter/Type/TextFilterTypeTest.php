@@ -10,20 +10,25 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\TextFilterType;
 
 class TextFilterTypeTest extends DoctrineOrmFilterTypeTestCase
 {
-    public static function operatorExpressionProvider(): iterable
-    {
-        $expr = new Expr();
-
-        yield 'equals' => [Operator::Equals, $expr->eq(...)];
-        yield 'not equals' => [Operator::NotEquals, $expr->neq(...)];
-        yield 'contains' => [Operator::Contains, $expr->like(...)];
-        yield 'not contains' => [Operator::NotContains, $expr->notLike(...)];
-        yield 'starts with' => [Operator::StartsWith, $expr->like(...)];
-        yield 'ends with' => [Operator::EndsWith, $expr->like(...)];
-    }
-
     protected function getTestedType(): string
     {
         return TextFilterType::class;
+    }
+
+    protected function getDefaultOperator(): Operator
+    {
+        return Operator::Contains;
+    }
+
+    protected function getSupportedOperators(): array
+    {
+        return [
+            Operator::Equals,
+            Operator::NotEquals,
+            Operator::Contains,
+            Operator::NotContains,
+            Operator::StartsWith,
+            Operator::EndsWith,
+        ];
     }
 }
