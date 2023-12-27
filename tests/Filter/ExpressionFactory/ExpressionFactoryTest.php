@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\Query\Expr\Func;
 use Doctrine\ORM\Query\Parameter;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
+use Kreyu\Bundle\DataTableBundle\Filter\FilterConfigInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
@@ -177,6 +178,21 @@ class ExpressionFactoryTest extends TestCase
             new Parameter('foo', null),
             new Parameter('bar', null),
         ]);
+    }
+
+    public function testDataWithoutOperatorUsesFilterDefaultOperator()
+    {
+        $filterConfig = $this->createMock(FilterConfigInterface::class);
+        $filterConfig->method('getDefaultOperator')->willReturn(Operator::NotEquals);
+
+        $this->filter->method('getConfig')->willReturn($filterConfig);
+        $this->aliasResolver->method('resolve')->willReturn('foo');
+
+        $expression = $this->createExpression(new FilterData(), [
+            new Parameter('bar', null),
+        ]);
+
+        $this->assertEquals(new Comparison('foo', '<>', ':bar'), $expression);
     }
 
     private function createExpression(FilterData $data = new FilterData(), array $parameters = []): mixed
