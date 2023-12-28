@@ -15,4 +15,5 @@ composer require kreyu/data-table-doctrine-orm-bundle
 
 ## See also
 
+- [Events](docs/events.md)
 - [Expression Transformers](docs/expression-transformers.md)

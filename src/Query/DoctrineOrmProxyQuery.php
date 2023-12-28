@@ -102,7 +102,7 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
         $this->hints[$name] = $value;
     }
 
-    public function getHydrationMode(): string
+    public function getHydrationMode(): int|string
     {
         return $this->hydrationMode;
     }

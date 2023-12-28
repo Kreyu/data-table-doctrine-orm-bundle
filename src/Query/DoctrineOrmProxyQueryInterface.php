@@ -27,7 +27,7 @@ interface DoctrineOrmProxyQueryInterface extends ProxyQueryInterface
     /**
      * @psalm-return string|AbstractQuery::HYDRATE_*
      */
-    public function getHydrationMode(): string;
+    public function getHydrationMode(): int|string;
 
     /**
      * @psalm-param string|AbstractQuery::HYDRATE_* $hydrationMode
