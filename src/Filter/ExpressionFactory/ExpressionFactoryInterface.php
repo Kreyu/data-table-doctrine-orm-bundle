@@ -14,5 +14,5 @@ interface ExpressionFactoryInterface
     /**
      * @param array<Parameter> $parameters
      */
-    public function createExpression(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query, array $parameters): mixed;
+    public function create(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query, array $parameters): mixed;
 }

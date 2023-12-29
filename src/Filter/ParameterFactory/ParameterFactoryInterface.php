@@ -14,5 +14,5 @@ interface ParameterFactoryInterface
     /**
      * @return array<Parameter>
      */
-    public function createParameters(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query): array;
+    public function create(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query): array;
 }

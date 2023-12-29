@@ -197,6 +197,6 @@ class ExpressionFactoryTest extends TestCase
 
     private function createExpression(FilterData $data = new FilterData(), array $parameters = []): mixed
     {
-        return (new ExpressionFactory())->createExpression($this->filter, $data, $this->query, $parameters);
+        return (new ExpressionFactory())->create($this->filter, $data, $this->query, $parameters);
     }
 }

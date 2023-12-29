@@ -33,7 +33,7 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             throw new UnexpectedTypeException($query, DoctrineOrmProxyQueryInterface::class);
         }
 
-        $parameters = $this->parameterFactory->createParameters($filter, $data, $query);
+        $parameters = $this->parameterFactory->create($filter, $data, $query);
 
         $event = new PreSetParametersEvent($filter, $data, $query, $parameters);
 
@@ -45,7 +45,7 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             $queryBuilder->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
         }
 
-        $expression = $this->expressionFactory->createExpression($filter, $data, $query, $event->getParameters());
+        $expression = $this->expressionFactory->create($filter, $data, $query, $event->getParameters());
 
         $event = new PreApplyExpressionEvent($filter, $data, $query, $expression);
 
