@@ -117,10 +117,10 @@ class DoctrineOrmFilterHandlerTest extends TestCase
     private function createHandler(mixed $expression = null, array $parameters = []): DoctrineOrmFilterHandler
     {
         $expressionFactory = $this->createMock(ExpressionFactoryInterface::class);
-        $expressionFactory->method('createExpression')->willReturn($expression);
+        $expressionFactory->method('create')->willReturn($expression);
 
         $parameterFactory = $this->createMock(ParameterFactoryInterface::class);
-        $parameterFactory->method('createParameters')->willReturn($parameters);
+        $parameterFactory->method('create')->willReturn($parameters);
 
         return new DoctrineOrmFilterHandler($expressionFactory, $parameterFactory);
     }
