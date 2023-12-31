@@ -41,9 +41,9 @@ class ApplyExpressionTransformersTest extends TestCase
         $expression = $expectedExpression = new Expr\Comparison('foo', '=', 'bar');
 
         $event = new PreApplyExpressionEvent(
-            $filter,
-            $this->createFilterDataMock(),
             $this->createDoctrineOrmProxyQueryMock(),
+            $this->createFilterDataMock(),
+            $filter,
             $expression,
         );
 

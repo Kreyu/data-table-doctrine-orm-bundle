@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Handler;
 
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
@@ -33,9 +33,9 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             throw new UnexpectedTypeException($query, DoctrineOrmProxyQueryInterface::class);
         }
 
-        $parameters = $this->parameterFactory->create($filter, $data, $query);
+        $parameters = $this->parameterFactory->create($query, $data, $filter);
 
-        $event = new PreSetParametersEvent($filter, $data, $query, $parameters);
+        $event = new PreSetParametersEvent($query, $data, $filter, $parameters);
 
         $this->dispatch(DoctrineOrmFilterEvents::PRE_SET_PARAMETERS, $event);
 
@@ -45,9 +45,9 @@ class DoctrineOrmFilterHandler implements FilterHandlerInterface
             $queryBuilder->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
         }
 
-        $expression = $this->expressionFactory->create($filter, $data, $query, $event->getParameters());
+        $expression = $this->expressionFactory->create($query, $data, $filter, $event->getParameters());
 
-        $event = new PreApplyExpressionEvent($filter, $data, $query, $expression);
+        $event = new PreApplyExpressionEvent($query, $data, $filter, $expression);
 
         $this->dispatch(DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION, $event);
 

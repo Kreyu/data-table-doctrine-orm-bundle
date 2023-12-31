@@ -1,10 +1,8 @@
 <?php
 
-/** @noinspection PhpUnhandledExceptionInspection */
-
 declare(strict_types=1);
 
-namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter\Handler;
 
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
@@ -17,8 +15,8 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\DoctrineOrmFilterEvents;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreSetParametersEvent;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\DoctrineOrmFilterHandler;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionFactory\ExpressionFactoryInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Handler\DoctrineOrmFilterHandler;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ParameterFactory\ParameterFactoryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Query\NotSupportedProxyQuery;
@@ -104,9 +102,9 @@ class DoctrineOrmFilterHandlerTest extends TestCase
                     2 => DoctrineOrmFilterEvents::PRE_APPLY_EXPRESSION,
                 }, $eventName);
 
-                $this->assertEquals($this->filter, $event->getFilter());
                 $this->assertEquals($this->query, $event->getQuery());
                 $this->assertEquals($this->data, $event->getData());
+                $this->assertEquals($this->filter, $event->getFilter());
 
                 return $event;
             });

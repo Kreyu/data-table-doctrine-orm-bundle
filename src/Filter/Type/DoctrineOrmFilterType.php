@@ -7,8 +7,8 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Type\AbstractFilterType;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\EventListener\ApplyExpressionTransformers;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\DoctrineOrmFilterHandler;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\ExpressionTransformerInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Handler\DoctrineOrmFilterHandler;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 final class DoctrineOrmFilterType extends AbstractFilterType

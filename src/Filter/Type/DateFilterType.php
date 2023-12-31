@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type;
 
 use Kreyu\Bundle\DataTableBundle\Filter\FilterBuilderInterface;
-use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
-use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Formatter\DateActiveFilterFormatter;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -31,7 +30,7 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
         $resolver
             ->setDefaults([
                 'form_type' => DateType::class,
-                'active_filter_formatter' => $this->getFormattedActiveFilterString(...),
+                'active_filter_formatter' => new DateActiveFilterFormatter(),
             ])
             ->addNormalizer('form_options', function (Options $options, array $value) {
                 if (DateType::class !== $options['form_type']) {
@@ -41,16 +40,5 @@ class DateFilterType extends AbstractDoctrineOrmFilterType
                 return $value + ['widget' => 'single_text'];
             })
         ;
-    }
-
-    private function getFormattedActiveFilterString(FilterData $data, FilterInterface $filter, array $options): string
-    {
-        $value = $data->getValue();
-
-        if ($value instanceof \DateTimeInterface) {
-            return $value->format($options['form_options']['input_format'] ?? 'Y-m-d');
-        }
-
-        return (string) $value;
     }
 }

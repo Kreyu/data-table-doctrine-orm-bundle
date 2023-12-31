@@ -22,6 +22,7 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     private int $batchSize = 5000;
     private PaginatorFactoryInterface $paginatorFactory;
     private AliasResolverInterface $aliasResolver;
+    private DoctrineOrmResultSetFactoryInterface $resultSetFactory;
 
     /**
      * @param array<string, mixed> $hints
@@ -38,11 +39,6 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
         return $this->queryBuilder->$name(...$args);
     }
 
-    public function __get(string $name): mixed
-    {
-        return $this->queryBuilder->{$name};
-    }
-
     public function __clone(): void
     {
         $this->queryBuilder = clone $this->queryBuilder;
@@ -50,22 +46,13 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 
     public function sort(SortingData $sortingData): void
     {
-        if (empty($sortCriteria = $sortingData->getColumns())) {
-            return;
-        }
-
-        $orderByDQLPart = $this->queryBuilder->getDQLPart('orderBy');
-
         $this->queryBuilder->resetDQLPart('orderBy');
 
-        foreach ($sortCriteria as $sortCriterion) {
-            $sortCriterionPath = $this->getAliasResolver()->resolve((string) $sortCriterion->getPropertyPath(), $this->queryBuilder);
-
-            $this->queryBuilder->addOrderBy($sortCriterionPath, $sortCriterion->getDirection());
-
-            foreach ($orderByDQLPart as $orderBy) {
-                $this->queryBuilder->addOrderBy($orderBy);
-            }
+        foreach ($sortingData->getColumns() as $sortCriterion) {
+            $this->queryBuilder->addOrderBy(
+                $this->getAliasResolver()->resolve((string) $sortCriterion->getPropertyPath(), $this->queryBuilder),
+                $sortCriterion->getDirection(),
+            );
         }
     }
 
@@ -79,7 +66,10 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 
     public function getResult(): ResultSetInterface
     {
-        return new DoctrineOrmResultSet($this->getPaginatorFactory()->create($this->queryBuilder, $this->hints));
+        return $this->getResultSetFactory()->create(
+            $this->getPaginatorFactory()->create($this->queryBuilder, $this->hints),
+            $this->batchSize,
+        );
     }
 
     public function getQueryBuilder(): QueryBuilder
@@ -120,7 +110,7 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     public function setBatchSize(int $batchSize): void
     {
         if ($batchSize <= 0) {
-            throw new InvalidArgumentException('The batch size must be positive');
+            throw new InvalidArgumentException('The batch size must be positive.');
         }
 
         $this->batchSize = $batchSize;
@@ -144,5 +134,15 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
     public function setAliasResolver(AliasResolverInterface $aliasResolver): void
     {
         $this->aliasResolver = $aliasResolver;
+    }
+
+    public function getResultSetFactory(): DoctrineOrmResultSetFactoryInterface
+    {
+        return $this->resultSetFactory ??= new DoctrineOrmResultSetFactory();
+    }
+
+    public function setResultSetFactory(DoctrineOrmResultSetFactoryInterface $resultSetFactory): void
+    {
+        $this->resultSetFactory = $resultSetFactory;
     }
 }

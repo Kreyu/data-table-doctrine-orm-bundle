@@ -7,6 +7,7 @@ namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Filter\Type;
 use Kreyu\Bundle\DataTableBundle\Filter\Operator;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Type\DateFilterType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 
 class DateFilterTypeTest extends DoctrineOrmFilterTypeTestCase
 {
@@ -30,5 +31,34 @@ class DateFilterTypeTest extends DoctrineOrmFilterTypeTestCase
     protected function getDefaultFormType(): string
     {
         return DateType::class;
+    }
+
+    public function testItShouldAddWidgetFormOptionWhenFormTypeIsDateType(): void
+    {
+        $formOptions = ['trim' => false];
+
+        $filter = $this->createFilter(['form_options' => $formOptions]);
+
+        $expectedFormOptions = $formOptions + ['widget' => 'single_text'];
+
+        $this->assertEquals($expectedFormOptions, $filter->getConfig()->getOption('form_options'));
+    }
+
+    public function testItShouldNotOverwriteWidgetFormOptionIfGivenWhenFormTypeIsDateType(): void
+    {
+        $formOptions = ['widget' => 'choice'];
+
+        $filter = $this->createFilter(['form_options' => $formOptions]);
+
+        $this->assertEquals($formOptions, $filter->getConfig()->getOption('form_options'));
+    }
+
+    public function testItShouldNotModifyFormOptionsWhenFormTypeIsNotDateType(): void
+    {
+        $formOptions = ['trim' => false];
+
+        $filter = $this->createFilter(['form_type' => TextType::class, 'form_options' => $formOptions]);
+
+        $this->assertEquals($formOptions, $filter->getConfig()->getOption('form_options'));
     }
 }

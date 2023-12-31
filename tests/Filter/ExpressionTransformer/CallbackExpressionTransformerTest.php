@@ -32,4 +32,13 @@ class CallbackExpressionTransformerTest extends ExpressionTransformerTestCase
             $expr->eq($expr->lower('foo'), $expr->upper('bar')),
         ];
     }
+
+    public function testConstructorConvertsCallableToClosure(): void
+    {
+        $transformer = self::createTransformer(fn () => null);
+
+        $reflectionProperty = new \ReflectionProperty($transformer, 'callback');
+
+        $this->assertEquals('Closure', $reflectionProperty->getType());
+    }
 }

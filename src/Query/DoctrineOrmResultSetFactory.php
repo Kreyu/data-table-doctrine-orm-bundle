@@ -8,20 +8,20 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use Kreyu\Bundle\DataTableBundle\Query\ResultSet;
 use Kreyu\Bundle\DataTableBundle\Util\RewindableGeneratorIterator;
 
-class DoctrineOrmResultSet extends ResultSet
+class DoctrineOrmResultSetFactory implements DoctrineOrmResultSetFactoryInterface
 {
-    public function __construct(Paginator $paginator, int $batchSize = 5000)
+    public function create(Paginator $paginator, int $batchSize = 5000): ResultSet
     {
         $items = new RewindableGeneratorIterator(fn () => $this->getPaginatorItems($paginator, $batchSize));
 
         $currentPageItemCount = $totalItemCount = $paginator->count();
 
-        if (null !== $paginator->getQuery()->getMaxResults()) {
+        if ($paginator->getQuery()->getMaxResults() > 0) {
             $items = new \ArrayIterator(iterator_to_array($items));
             $currentPageItemCount = iterator_count($items);
         }
 
-        parent::__construct($items, $currentPageItemCount, $totalItemCount);
+        return new ResultSet($items, $currentPageItemCount, $totalItemCount);
     }
 
     private function getPaginatorItems(Paginator $paginator, int $batchSize): \Generator

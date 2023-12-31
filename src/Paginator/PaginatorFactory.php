@@ -15,7 +15,7 @@ class PaginatorFactory implements PaginatorFactoryInterface
         $rootEntity = current($queryBuilder->getRootEntities());
 
         if (false === $rootEntity) {
-            throw new \RuntimeException('There are not root entities defined in the query.');
+            throw new \RuntimeException('There are no root entities defined in the query.');
         }
 
         $identifierFieldNames = $queryBuilder
@@ -87,14 +87,14 @@ class PaginatorFactory implements PaginatorFactoryInterface
         }
 
         // Do not support queries using a field from a toMany relation in the ORDER BY clause
-        if ($this->hasOrderByWithToManyAssociation($queryBuilder)) {
+        if ($this->hasOrderByAssociation($queryBuilder)) {
             return false;
         }
 
         return true;
     }
 
-    public function hasOrderByWithToManyAssociation(QueryBuilder $queryBuilder): bool
+    public function hasOrderByAssociation(QueryBuilder $queryBuilder): bool
     {
         $joinParts = $queryBuilder->getDQLPart('join');
 

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Query;
 
-use Doctrine\ORM\Query\Expr\Select;
 use Doctrine\ORM\QueryBuilder;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\AliasResolver;
-use PHPUnit\Framework\MockObject\MockObject;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Entity\Product;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\TestEntityManagerFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class AliasResolverTest extends TestCase
@@ -19,55 +20,49 @@ class AliasResolverTest extends TestCase
         $this->resolver = new AliasResolver();
     }
 
-    public function testResolvingShouldAddRootAlias(): void
+    #[DataProvider('provideResolveCases')]
+    public function testResolve(QueryBuilder $queryBuilder, string $queryPath, string $resolvedQueryPath): void
     {
-        $queryBuilder = $this->createQueryBuilderMock('alias');
-
-        $queryPath = $this->resolver->resolve('foo', $queryBuilder);
-
-        $this->assertEquals('alias.foo', $queryPath);
+        $this->assertEquals($resolvedQueryPath, $this->resolver->resolve($queryPath, $queryBuilder));
     }
 
-    public function testResolvingWithDotInQueryPathShouldNotAddRootAlias(): void
+    public static function provideResolveCases(): iterable
     {
-        $queryBuilder = $this->createQueryBuilderMock('alias');
+        yield 'Without alias in query path' => [
+            TestEntityManagerFactory::create()
+                ->createQueryBuilder()
+                ->from(Product::class, 'product'),
+            'name',
+            'product.name',
+        ];
 
-        $queryPath = $this->resolver->resolve('foo.bar', $queryBuilder);
+        yield 'With alias in query path' => [
+            TestEntityManagerFactory::create()
+                ->createQueryBuilder()
+                ->from(Product::class, 'product')
+                ->leftJoin('product.category', 'category'),
+            'category.name',
+            'category.name',
+        ];
 
-        $this->assertEquals('foo.bar', $queryPath);
-    }
+        yield 'With query path present in SELECT part' => [
+            TestEntityManagerFactory::create()
+                ->createQueryBuilder()
+                ->addSelect('UPPER(product.name) AS product_name')
+                ->from(Product::class, 'product')
+                ->leftJoin('product.category', 'category'),
+            'product_name',
+            'product_name',
+        ];
 
-    public function testResolvingWithQueryPathThatExistsInSelectDQLPartShouldNotAddRootAlias(): void
-    {
-        $queryBuilder = $this->createQueryBuilderMock('alias');
-
-        $queryBuilder->method('getDQLPart')->with('select')->willReturn([
-            new Select(['test AS foo']),
-        ]);
-
-        $queryPath = $this->resolver->resolve('foo', $queryBuilder);
-
-        $this->assertEquals('foo', $queryPath);
-    }
-
-    public function testResolvingWithQueryPathThatExistsInHiddenSelectDQLPartShouldNotAddRootAlias(): void
-    {
-        $queryBuilder = $this->createQueryBuilderMock('alias');
-
-        $queryBuilder->method('getDQLPart')->with('select')->willReturn([
-            new Select(['test AS HIDDEN foo']),
-        ]);
-
-        $queryPath = $this->resolver->resolve('foo', $queryBuilder);
-
-        $this->assertEquals('foo', $queryPath);
-    }
-
-    private function createQueryBuilderMock(string $rootAlias): QueryBuilder&MockObject
-    {
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('getRootAliases')->willReturn([$rootAlias]);
-
-        return $queryBuilder;
+        yield 'With query path present in SELECT part marked as HIDDEN' => [
+            TestEntityManagerFactory::create()
+                ->createQueryBuilder()
+                ->addSelect('UPPER(product.name) AS HIDDEN product_name')
+                ->from(Product::class, 'product')
+                ->leftJoin('product.category', 'category'),
+            'product_name',
+            'product_name',
+        ];
     }
 }

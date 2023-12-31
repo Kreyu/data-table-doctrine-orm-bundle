@@ -13,26 +13,29 @@ use PHPUnit\Framework\TestCase;
 
 class DoctrineOrmProxyQueryFactoryTest extends TestCase
 {
+    private DoctrineOrmProxyQueryFactory $factory;
+
+    protected function setUp(): void
+    {
+        $this->factory = new DoctrineOrmProxyQueryFactory();
+    }
+
     public function testCreatingWithSupportedData(): void
     {
-        $factory = new DoctrineOrmProxyQueryFactory();
+        $queryBuilder = $this->createStub(QueryBuilder::class);
 
-        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $data = $this->factory->create($queryBuilder);
 
-        $query = $factory->create($queryBuilder);
-
-        $this->assertInstanceOf(DoctrineOrmProxyQuery::class, $query);
-        $this->assertEquals($queryBuilder, $query->getQueryBuilder());
+        $this->assertInstanceOf(DoctrineOrmProxyQuery::class, $data);
+        $this->assertEquals($queryBuilder, $data->getQueryBuilder());
     }
 
     public function testCreatingWithNotSupportedData(): void
     {
-        $factory = new DoctrineOrmProxyQueryFactory();
-
-        $data = $this->createMock(Query::class);
+        $data = $this->createStub(Query::class);
 
         $this->expectExceptionObject(new UnexpectedTypeException($data, QueryBuilder::class));
 
-        $factory->create($data);
+        $this->factory->create($data);
     }
 }

@@ -11,12 +11,12 @@ use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 class PreApplyExpressionEvent extends DoctrineOrmFilterEvent
 {
     public function __construct(
-        FilterInterface $filter,
-        FilterData $data,
         ProxyQueryInterface $query,
+        FilterData $data,
+        FilterInterface $filter,
         private mixed $expression,
     ) {
-        parent::__construct($filter, $data, $query);
+        parent::__construct($query, $data, $filter);
     }
 
     public function getExpression(): mixed

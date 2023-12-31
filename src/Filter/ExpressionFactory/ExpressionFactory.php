@@ -13,7 +13,7 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface
 
 class ExpressionFactory implements ExpressionFactoryInterface
 {
-    public function create(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query, array $parameters): mixed
+    public function create(DoctrineOrmProxyQueryInterface $query, FilterData $data, FilterInterface $filter, array $parameters): mixed
     {
         if (empty($parameters)) {
             throw new InvalidArgumentException('The expression factory requires at least one parameter.');

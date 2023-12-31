@@ -157,6 +157,6 @@ class ParameterFactoryTest extends TestCase
 
     private function createParameters(FilterData $data = new FilterData()): array
     {
-        return (new ParameterFactory())->create($this->filter, $data, $this->query);
+        return (new ParameterFactory())->create($this->query, $data, $this->filter);
     }
 }

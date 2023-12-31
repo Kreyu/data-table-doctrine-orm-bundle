@@ -12,15 +12,15 @@ use Symfony\Contracts\EventDispatcher\Event;
 class DoctrineOrmFilterEvent extends Event
 {
     public function __construct(
-        private readonly FilterInterface $filter,
-        private readonly FilterData $data,
         private readonly ProxyQueryInterface $query,
+        private readonly FilterData $data,
+        private readonly FilterInterface $filter,
     ) {
     }
 
-    public function getFilter(): FilterInterface
+    public function getQuery(): ProxyQueryInterface
     {
-        return $this->filter;
+        return $this->query;
     }
 
     public function getData(): FilterData
@@ -28,8 +28,8 @@ class DoctrineOrmFilterEvent extends Event
         return $this->data;
     }
 
-    public function getQuery(): ProxyQueryInterface
+    public function getFilter(): FilterInterface
     {
-        return $this->query;
+        return $this->filter;
     }
 }

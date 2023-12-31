@@ -45,4 +45,8 @@ interface DoctrineOrmProxyQueryInterface extends ProxyQueryInterface
     public function getAliasResolver(): AliasResolverInterface;
 
     public function setAliasResolver(AliasResolverInterface $aliasResolver): void;
+
+    public function getResultSetFactory(): DoctrineOrmResultSetFactoryInterface;
+
+    public function setResultSetFactory(DoctrineOrmResultSetFactoryInterface $resultSetFactory): void;
 }

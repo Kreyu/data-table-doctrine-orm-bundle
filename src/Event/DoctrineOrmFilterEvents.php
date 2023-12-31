@@ -10,6 +10,9 @@ final class DoctrineOrmFilterEvents
 
     public const PRE_APPLY_EXPRESSION = 'kreyu_doctrine_orm_data_table.filter.pre_apply_expression';
 
+    /**
+     * @codeCoverageIgnore
+     */
     private function __construct()
     {
     }

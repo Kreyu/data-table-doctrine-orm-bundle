@@ -12,12 +12,12 @@ use Kreyu\Bundle\DataTableBundle\Query\ProxyQueryInterface;
 class PreSetParametersEvent extends DoctrineOrmFilterEvent
 {
     public function __construct(
-        FilterInterface $filter,
-        FilterData $data,
         ProxyQueryInterface $query,
+        FilterData $data,
+        FilterInterface $filter,
         private array $parameters,
     ) {
-        parent::__construct($filter, $data, $query);
+        parent::__construct($query, $data, $filter);
     }
 
     /**

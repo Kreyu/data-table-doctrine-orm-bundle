@@ -12,7 +12,7 @@ use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface
 
 class ParameterFactory implements ParameterFactoryInterface
 {
-    public function create(FilterInterface $filter, FilterData $data, DoctrineOrmProxyQueryInterface $query): array
+    public function create(DoctrineOrmProxyQueryInterface $query, FilterData $data, FilterInterface $filter): array
     {
         $parameters = [];
 
