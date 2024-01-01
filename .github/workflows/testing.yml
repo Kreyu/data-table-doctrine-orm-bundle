@@ -14,3 +14,5 @@ jobs:
       with:
         php_extensions: xdebug
         coverage_clover: coverage/clover.xml
+      env:
+        XDEBUG_MODE: coverage
