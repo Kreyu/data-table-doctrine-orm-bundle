@@ -10,11 +10,9 @@ use Kreyu\Bundle\DataTableBundle\Filter\FilterData;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Event\PreApplyExpressionEvent;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\EventListener\ApplyExpressionTransformers;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\LowerExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\TrimExpressionTransformer;
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\UpperExpressionTransformer;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Query\DoctrineOrmProxyQueryInterface;
 use Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Filter\ExpressionTransformer\CustomExpressionTransformer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -27,44 +25,60 @@ class ApplyExpressionTransformersTest extends TestCase
         $this->listener = new ApplyExpressionTransformers();
     }
 
-    public function testItChainsBuiltInTransformersWithCustomOnes(): void
+    #[DataProvider('providePreApplyExpressionCases')]
+    public function testPreApplyExpression(array $options, string $expected)
     {
-        $filter = $this->createFilterMock([
-            'trim' => true,
-            'lower' => true,
-            'upper' => true,
-            'expression_transformers' => [
-                new CustomExpressionTransformer(),
-            ],
-        ]);
-
-        $expression = $expectedExpression = new Expr\Comparison('foo', '=', 'bar');
+        $expression = new Expr\Comparison('foo', '=', 'bar');
 
         $event = new PreApplyExpressionEvent(
-            $this->createDoctrineOrmProxyQueryMock(),
-            $this->createFilterDataMock(),
-            $filter,
+            $this->createMock(DoctrineOrmProxyQueryInterface::class),
+            $this->createMock(FilterData::class),
+            $this->createFilterMock($options),
             $expression,
         );
 
         $this->listener->preApplyExpression($event);
 
-        $expressionTransformers = [
-            new TrimExpressionTransformer(),
-            new LowerExpressionTransformer(),
-            new UpperExpressionTransformer(),
-            new CustomExpressionTransformer(),
+        $this->assertEquals($expected, $event->getExpression());
+    }
+
+    public static function providePreApplyExpressionCases(): iterable
+    {
+        yield 'Using "trim" option' => [
+            ['trim' => true],
+            'TRIM(foo) = TRIM(bar)',
         ];
 
-        foreach ($expressionTransformers as $expressionTransformer) {
-            $expectedExpression = $expressionTransformer->transform($expectedExpression);
-        }
+        yield 'Using "lower" option' => [
+            ['lower' => true],
+            'LOWER(foo) = LOWER(bar)',
+        ];
 
-        $this->assertEquals($expectedExpression, $event->getExpression());
+        yield 'Using "upper" option' => [
+            ['upper' => true],
+            'UPPER(foo) = UPPER(bar)',
+        ];
+
+        yield 'Using "expression_transformers" option' => [
+            ['expression_transformers' => [new CustomExpressionTransformer()]],
+            'CUSTOM(foo) = CUSTOM(bar)',
+        ];
+
+        yield 'Using "trim", "lower" and "upper" options with "expression_transformers" option' => [
+            ['trim' => true, 'lower' => true, 'upper' => true, 'expression_transformers' => [new CustomExpressionTransformer()]],
+            'CUSTOM(UPPER(LOWER(TRIM(foo)))) = CUSTOM(UPPER(LOWER(TRIM(bar))))',
+        ];
     }
 
     private function createFilterMock(array $options = []): FilterInterface&MockObject
     {
+        $options += [
+            'trim' => false,
+            'lower' => false,
+            'upper' => false,
+            'expression_transformers' => [],
+        ];
+
         $filterConfig = $this->createMock(FilterConfigInterface::class);
         $filterConfig->method('getOption')->willReturnCallback(function (string $option) use ($options) {
             return $options[$option] ?? null;
@@ -74,15 +88,5 @@ class ApplyExpressionTransformersTest extends TestCase
         $filter->method('getConfig')->willReturn($filterConfig);
 
         return $filter;
-    }
-
-    private function createFilterDataMock(): FilterData&MockObject
-    {
-        return $this->createMock(FilterData::class);
-    }
-
-    private function createDoctrineOrmProxyQueryMock(): DoctrineOrmProxyQueryInterface&MockObject
-    {
-        return $this->createMock(DoctrineOrmProxyQueryInterface::class);
     }
 }

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Fixtures\Filter\ExpressionTransformer;
 
-use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\ExpressionTransformerInterface;
+use Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\ExpressionTransformer\AbstractComparisonExpressionTransformer;
 
-class CustomExpressionTransformer implements ExpressionTransformerInterface
+class CustomExpressionTransformer extends AbstractComparisonExpressionTransformer
 {
-    public function transform(mixed $expression): string
+    protected function transformLeftExpr(mixed $leftExpr): string
     {
-        return sprintf('CUSTOM(%s)', $expression);
+        return sprintf('CUSTOM(%s)', $leftExpr);
+    }
+
+    protected function transformRightExpr(mixed $rightExpr): string
+    {
+        return sprintf('CUSTOM(%s)', $rightExpr);
     }
 }

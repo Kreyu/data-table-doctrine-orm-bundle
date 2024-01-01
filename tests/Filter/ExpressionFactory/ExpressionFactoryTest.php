@@ -34,6 +34,14 @@ class ExpressionFactoryTest extends TestCase
         $this->query->method('getAliasResolver')->willReturn($this->aliasResolver);
     }
 
+    #[DataProvider('expectedExpressionProvider')]
+    public function testItCreatesExpression(string $queryPath, FilterData $data, array $parameters, mixed $expected): void
+    {
+        $this->aliasResolver->method('resolve')->willReturn($queryPath);
+
+        $this->assertEquals($expected, $this->createExpression($data, $parameters));
+    }
+
     public static function expectedExpressionProvider(): iterable
     {
         yield 'equals' => [
@@ -153,14 +161,6 @@ class ExpressionFactoryTest extends TestCase
             ],
             'expected' => 'foo BETWEEN :bar AND :baz',
         ];
-    }
-
-    #[DataProvider('expectedExpressionProvider')]
-    public function testItCreatesExpression(string $queryPath, FilterData $data, array $parameters, mixed $expected): void
-    {
-        $this->aliasResolver->method('resolve')->willReturn($queryPath);
-
-        $this->assertEquals($expected, $this->createExpression($data, $parameters));
     }
 
     public function testItRequiresParameters()
