@@ -10,7 +10,6 @@ Use [Composer](https://getcomposer.org/) to install the bundle:
 composer require kreyu/data-table-doctrine-orm-bundle
 ```
 
-## See also
+## Documentation
 
-- [Events](docs/events.md)
-- [Expression Transformers](docs/expression-transformers.md)
+Check out the [official documentation](https://data-table-bundle.swroblewski.pl/integrations/doctrine-orm/).
