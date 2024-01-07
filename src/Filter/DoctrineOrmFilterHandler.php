@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter\Handler;
+namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Filter;
 
 use Kreyu\Bundle\DataTableBundle\Exception\UnexpectedTypeException;
 use Kreyu\Bundle\DataTableBundle\Filter\FilterData;

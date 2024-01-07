@@ -1,5 +1,7 @@
 # DataTableDoctrineOrmBundle
 
+[![Latest Stable Version](http://poser.pugx.org/kreyu/data-table-doctrine-orm-bundle/v)](https://packagist.org/packages/kreyu/data-table-doctrine-orm-bundle)
+
 Provides [Doctrine ORM](https://github.com/doctrine/orm) integration for the [DataTableBundle](https://github.com/kreyu/data-table-bundle).
 
 ## Installation
