@@ -66,10 +66,10 @@ class DoctrineOrmProxyQuery implements DoctrineOrmProxyQueryInterface
 
     public function getResult(): ResultSetInterface
     {
-        return $this->getResultSetFactory()->create(
-            $this->getPaginatorFactory()->create($this->queryBuilder, $this->hints),
-            $this->batchSize,
-        );
+        $paginator = $this->getPaginatorFactory()->create($this->queryBuilder, $this->hints);
+        $paginator->getQuery()->setHydrationMode($this->hydrationMode);
+
+        return $this->getResultSetFactory()->create($paginator, $this->batchSize);
     }
 
     public function getQueryBuilder(): QueryBuilder

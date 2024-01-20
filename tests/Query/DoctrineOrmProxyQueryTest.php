@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kreyu\Bundle\DataTableDoctrineOrmBundle\Tests\Query;
 
 use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Kreyu\Bundle\DataTableBundle\Exception\InvalidArgumentException;
@@ -81,6 +82,7 @@ class DoctrineOrmProxyQueryTest extends TestCase
         $queryBuilder = $this->createMock(QueryBuilder::class);
 
         $paginator = $this->createMock(Paginator::class);
+        $paginator->method('getQuery')->willReturn($this->createMock(Query::class));
 
         $paginationFactory = $this->createMock(PaginatorFactoryInterface::class);
         $paginationFactory->expects($this->once())
@@ -142,19 +144,43 @@ class DoctrineOrmProxyQueryTest extends TestCase
     {
         $queryBuilder = $this->createMock(QueryBuilder::class);
 
+        $query = $this->createMock(Query::class);
+        $query->expects($this->once())->method('setHydrationMode')->with(AbstractQuery::HYDRATE_OBJECT);
+
+        $paginator = $this->createMock(Paginator::class);
+        $paginator->method('getQuery')->willReturn($query);
+
+        $paginatorFactory = $this->createMock(PaginatorFactoryInterface::class);
+        $paginatorFactory->method('create')->willReturn($paginator);
+
         $proxyQuery = new DoctrineOrmProxyQuery($queryBuilder);
+        $proxyQuery->setPaginatorFactory($paginatorFactory);
 
         $this->assertEquals(AbstractQuery::HYDRATE_OBJECT, $proxyQuery->getHydrationMode());
+
+        $proxyQuery->getResult();
     }
 
     public function testSetHydrationMode()
     {
         $queryBuilder = $this->createMock(QueryBuilder::class);
 
+        $query = $this->createMock(Query::class);
+        $query->expects($this->once())->method('setHydrationMode')->with(AbstractQuery::HYDRATE_ARRAY);
+
+        $paginator = $this->createMock(Paginator::class);
+        $paginator->method('getQuery')->willReturn($query);
+
+        $paginatorFactory = $this->createMock(PaginatorFactoryInterface::class);
+        $paginatorFactory->method('create')->willReturn($paginator);
+
         $proxyQuery = new DoctrineOrmProxyQuery($queryBuilder);
+        $proxyQuery->setPaginatorFactory($paginatorFactory);
         $proxyQuery->setHydrationMode(AbstractQuery::HYDRATE_ARRAY);
 
         $this->assertEquals(AbstractQuery::HYDRATE_ARRAY, $proxyQuery->getHydrationMode());
+
+        $proxyQuery->getResult();
     }
 
     public function testGetDefaultBatchSize()
